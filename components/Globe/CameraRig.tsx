@@ -7,12 +7,15 @@ import type { OrbitControls as OrbitControlsType } from "three-stdlib";
 import type { Marker } from "@/data/markers";
 import { cameraFromMarker, quadraticArc, targetFromMarker } from "@/lib/camera";
 
+type FlyToCoordinate = { lat: number; lng: number } | null;
+
 type CameraRigProps = {
   selectedMarker: Marker | null;
+  flyToCoordinate?: FlyToCoordinate;
   controlsRef: MutableRefObject<OrbitControlsType | null>;
 };
 
-export function CameraRig({ selectedMarker, controlsRef }: CameraRigProps) {
+export function CameraRig({ selectedMarker, flyToCoordinate, controlsRef }: CameraRigProps) {
   const { camera } = useThree();
 
   const fromPos = useRef(new THREE.Vector3(0, 0, 3.2));
@@ -21,6 +24,7 @@ export function CameraRig({ selectedMarker, controlsRef }: CameraRigProps) {
   const toTarget = useRef(new THREE.Vector3(0, 0, 0));
   const progress = useRef(1);
   const pendingMarkerRef = useRef<Marker | null>(null);
+  const pendingCoordRef = useRef<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
     if (!selectedMarker) {
@@ -29,6 +33,15 @@ export function CameraRig({ selectedMarker, controlsRef }: CameraRigProps) {
     }
     pendingMarkerRef.current = selectedMarker;
   }, [selectedMarker]);
+
+  // Handle flyToCoordinate (from Village Search)
+  useEffect(() => {
+    if (!flyToCoordinate) {
+      pendingCoordRef.current = null;
+      return;
+    }
+    pendingCoordRef.current = { ...flyToCoordinate };
+  }, [flyToCoordinate]);
 
   useFrame((_, delta) => {
     // Start or interrupt flight when a new marker is selected
@@ -44,6 +57,18 @@ export function CameraRig({ selectedMarker, controlsRef }: CameraRigProps) {
       toTarget.current.copy(
         targetFromMarker(marker.coordinates.lat, marker.coordinates.lng, 1.02)
       );
+      progress.current = 0;
+    }
+
+    // Start flight when flyToCoordinate is set (Village Search)
+    if (pendingCoordRef.current && controlsRef.current) {
+      const { lat, lng } = pendingCoordRef.current;
+      pendingCoordRef.current = null;
+
+      fromPos.current.copy(camera.position);
+      fromTarget.current.copy(controlsRef.current.target);
+      toPos.current.copy(cameraFromMarker(lat, lng, 1.95));
+      toTarget.current.copy(targetFromMarker(lat, lng, 1.02));
       progress.current = 0;
     }
 

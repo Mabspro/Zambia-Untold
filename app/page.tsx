@@ -54,6 +54,7 @@ export default function HomePage() {
   // Cards appear when the user actively scrubs time or selects a marker.
   const [contextualCardDismissed, setContextualCardDismissed] = useState(true);
   const [activePanel, setActivePanel] = useState<ActivePanel>(null);
+  const [flyToCoordinate, setFlyToCoordinate] = useState<{ lat: number; lng: number } | null>(null);
   const didBootRef = useRef(false);
 
   const selectedMarker = useMemo(
@@ -175,7 +176,10 @@ export default function HomePage() {
         return;
       }
     }
-    // Close panels when navigating to globe
+    // Fly to arbitrary coordinate (Village Search)
+    setFlyToCoordinate({ lat, lng });
+    // Reset after a tick so the same coordinate can be re-selected
+    setTimeout(() => setFlyToCoordinate(null), 100);
     setActivePanel(null);
   };
 
@@ -210,6 +214,7 @@ export default function HomePage() {
           }}
           layerVisibility={layerVisibility}
           showHUD={showUI}
+          flyToCoordinate={flyToCoordinate}
         />
       </CanvasWrapper>
 

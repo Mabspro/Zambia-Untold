@@ -31,6 +31,7 @@ type GlobeProps = {
   onMarkerSelect: (marker: Marker) => void;
   layerVisibility?: LayerVisibility;
   showHUD?: boolean;
+  flyToCoordinate?: { lat: number; lng: number } | null;
 };
 
 type CityLightsProps = {
@@ -137,6 +138,7 @@ function Scene({
   onMarkerSelect,
   layerVisibility = DEFAULT_LAYERS,
   showHUD = true,
+  flyToCoordinate,
 }: GlobeProps) {
   const { clock, gl, camera } = useThree();
   const globeRef = useRef<THREE.Group>(null);
@@ -449,7 +451,7 @@ function Scene({
       {/* SovereigntyStackHUD removed from 3D scene — it was positioned 0.1
           units in front of the camera with a dark-brown bg, acting as a
           full-viewport tint. Sovereignty data now shown in the UI layer. */}
-      <CameraRig selectedMarker={selectedMarker} controlsRef={controlsRef} />
+      <CameraRig selectedMarker={selectedMarker} flyToCoordinate={flyToCoordinate} controlsRef={controlsRef} />
     </>
   );
 }
@@ -480,6 +482,7 @@ export function Globe({
   onMarkerSelect,
   layerVisibility,
   showHUD = true,
+  flyToCoordinate,
 }: GlobeProps) {
   const fov = useResponsiveFov(42);
 
@@ -511,6 +514,7 @@ export function Globe({
         onMarkerSelect={onMarkerSelect}
         layerVisibility={layerVisibility}
         showHUD={showHUD}
+        flyToCoordinate={flyToCoordinate}
       />
     </Canvas>
   );
