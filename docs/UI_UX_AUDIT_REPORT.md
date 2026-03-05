@@ -146,6 +146,8 @@ A persistent, minimal **"You Are Here"** indicator — always visible, always ac
 
 **Position**: Top-center or just below the title. Small, non-intrusive, but always present. Like the "Gallery 3" placard in a museum hallway.
 
+**Key engineering constraint**: The Story Compass should always derive from exactly three things: **time** (Deep Time vs Human Time), **knowledge layer** (Earth / History / Memory / Myth), and **place** (Zambia, province, key site). If any of those change, the compass text updates immediately. That makes it the single source of truth for "Where am I in the story?"
+
 ### Why This Is So Powerful
 
 Most digital maps show **places**.
@@ -172,11 +174,31 @@ When implemented, the platform stops feeling like *a globe interface* and starts
 
 ---
 
+## 🤖 Age-of-AI Layer (Clarify, Don't Hide)
+
+Zambia Untold is already quietly using AI for:
+
+- **Story synthesis** (Deep Time vignettes, Inganji folk tale narratives)
+- **Search, suggestions, pathing** (Village Search geocoding, calendar "On This Day")
+- **Potential future**: live satellite overlays, anomaly detection, contribution triage, context-aware prompting
+
+**Risk**: If the AI work is invisible, you don't get credit. If it's foregrounded, you risk breaking the museum feel.
+
+**Recommendation**:
+
+1. **Treat AI as a "docent", not a character.** Small cues like: *"Narrative synthesized from geological and historical sources · Reviewed in Zambia."*
+2. **Use AI for context-aware prompts** — "Jump to Kariba in 1958", "Show Copperbelt 1980 vs today", "What ceremony happens near you this month?" — not just static UI.
+3. **Never let AI overwrite community knowledge.** Isibalo contributions and human reviewers remain the final authority. AI assists; the community validates.
+
+This keeps the age-of-AI factor visible without turning it into a gimmick. The platform uses AI the way a great museum uses its curator: invisible labor that makes the visitor feel guided, not lectured.
+
+---
+
 ## 🔴 Critical Issues (Fix Immediately)
 
-### 1. Globe Shows Americas/Asia, Not Africa
+### 1. Globe Initially Shows Americas/Asia, Not Africa
 
-**The Problem**: In multiple screenshots, the globe is displaying the Americas or Asia-Pacific — not Africa. For a project called "Zambia Untold," the globe should ALWAYS open centered on southern Africa. The idle auto-rotate drifts the globe away from Zambia within seconds.
+**The Problem**: In multiple screenshots, the globe initially displays the Americas or Asia-Pacific — not Africa. For a project called "Zambia Untold," the globe should ALWAYS open centered on southern Africa. The idle auto-rotate drifts the globe away from Zambia within seconds.
 
 **Root Cause**: The auto-rotate speed (0.35) combined with a 15-second idle snap timer means the globe drifts for a full 15 seconds before gently returning to Africa. First impressions are ruined — a visitor sees the Americas and thinks "is this about Zambia?"
 
@@ -185,6 +207,8 @@ When implemented, the platform stops feeling like *a globe interface* and starts
 - Lower `autoRotateSpeed` from 0.35 → 0.12 (slower drift, stays near Africa longer)
 - On initial load, ensure camera starts looking directly at Zambia (-13°S, 28°E), not just "Africa center"
 - Consider: disable auto-rotate entirely when no marker is selected; replace with a subtle bob/breathe animation that keeps Zambia in view
+
+**Technical note** *(implementation review)*: Fix at the source first. Ensure the **initial camera payload** (`africaCenteredCameraPosition(3.2)`) natively targets Zambia regardless of user interaction in the opening seconds. Drift tuning is secondary.
 
 **Severity**: 🔴 **Critical** — this is the first thing every visitor sees
 
@@ -235,6 +259,8 @@ When implemented, the platform stops feeling like *a globe interface* and starts
 - The primary directional light (0.95 intensity) may need to be angled more towards Africa to favor that hemisphere
 - Test with atmosphere opacity near 0.04 (from 0.07)
 
+**Technical note** *(implementation review)*: The limb wash is partly an **ACESFilmic tone-mapping artifact**. The primary directional light at 0.95 intensity computationally "blows out" the earth texture before it reaches the screen. Drop light intensities (primary 0.95 → 0.7–0.8) and adjust `gl.toneMappingExposure`. Consider testing `LinearToneMapping`.
+
 **Severity**: 🟠 **Major** — globe rendering quality
 
 ---
@@ -267,6 +293,8 @@ This is a lot of information in the top-left corner competing with the title. Th
 - On mobile (<480px), consider a 2-row action bar or a collapsible "more" button
 - Alternatively: group Search and Isibalo under a "+" overflow menu on mobile
 - Test on 375px width (iPhone SE) to verify
+
+**Implementation decision** *(review consensus)*: **Isibalo must stay visible.** Hiding "Add your memory" in overflow on phones — ~90% of local Zambian users — undermines Phase C (community ownership). Use a **2-row layout** instead of overflow so all six actions remain accessible.
 
 **Severity**: 🟠 **Major** — mobile usability
 
@@ -391,14 +419,14 @@ This is a lot of information in the top-left corner competing with the title. Th
 | **Concept & Vision** | 10 | Genuinely rare. No other platform does this for any African country. |
 | **Content Depth** | 8.5 | 41 calendar events, 9 tales, 9 markers. Needs 2–3x more for stickiness. |
 | **Visual Identity** | 9 | Copper-on-dark is museum-grade. Cohesive across all panels. |
-| **Globe Rendering** | 6.5 | Good texture, but atmosphere wash, limb glow, and not-on-Africa are issues. |
+| **Globe Rendering** | 6.5 | Strong base (60fps, shading, X-ray pipeline) but atmosphere, limb glow, and centering on Zambia need refinement. With fixes, this becomes a flagship asset, not just a backdrop. |
 | **Marker Visibility** | 7 | Just fixed to red — verify they're visible at default zoom. |
-| **Navigation/IA** | 5.5 | Three time-navigation patterns (TimeButtons, Layers eras, Deep Time panel) create confusion. |
+| **Navigation/IA** | 5.5 | Three time-navigation patterns (TimeButtons, Layers eras, Deep Time panel) create confusion. Converge on one canonical pattern. |
 | **Panel Layout** | 5 | Overlapping panels is the biggest UX problem. |
 | **Mobile Readiness** | 6 | FOV fix is good, but action bar crowding and panel sizes need work. |
 | **Performance** | 8 | 60fps WebGL, lazy-loaded, dpr-capped. Solid. |
 | **Accessibility** | 4 | Small fonts, no keyboard nav, no alt-text, no screen reader support. |
-| **Engagement/Stickiness** | 7.5 | Museum passport, "On This Day", Village Search are engaging hooks. |
+| **Engagement/Stickiness** | 7.5 | Museum passport, "On This Day", Village Search are engaging hooks. When all eras have been visited, "Journey Progress" should unlock a final **Sovereign View**: a composite screen showing Zambia across Deep Time, History, Memory, and Myth — less a "you finished the game" moment, more a **pilgrimage completion** that reinforces the central thesis. |
 | **Community Layer** | 7 | Isibalo form exists but no display of contributions on the globe yet. |
 
 **Overall**: **7.0 / 10** — "Impressive proof of concept with museum-grade aesthetics. Needs navigation consolidation, panel management, and globe-centering fixes to become production-ready."
@@ -409,6 +437,8 @@ This is a lot of information in the top-left corner competing with the title. Th
 
 ### Sprint C0 (Foundational — build first)
 0. **Build the Story Compass** — a persistent "You Are Here" indicator that derives from `scrubYear`, `activePanel`, `selectedMarker`, and always answers: *Where am I in time? Where am I in space? What layer am I in?* This single component resolves the root cause of issues #1, #2, #4, #5, and #8. It transforms the interface from "exploratory chaos" into a "guided historical atlas."
+
+**Technical addendum**: Use the X-Ray dissolve shader as non-textual anchoring — aggressive full dissolve for Deep Time (scrubYear < -10,000), crisp Earth for Human Time. Add a **Data Sovereignty** label ("Stored locally · No external tracking") to the UI; aligns with SovereigntyStackHUD.
 
 ### Sprint C1 (Immediate — 1 week)
 1. **Fix globe to stay on Africa** — reduce idle snap, lower autoRotate, center on Zambia
@@ -428,6 +458,11 @@ This is a lot of information in the top-left corner competing with the title. Th
 11. **Isibalo display on globe** — show community contributions as pins
 12. **Re-entry prompt wording** — add date range to zone names
 
+### Sprint C4 (Data Integrations — future)
+13. **Live and historical satellite layers** — phase in Digital Earth Africa (Sentinel-2, water bodies, NDVI) and NRSC Zambia geospatial overlays, always framed through the Story Compass so they deepen, not dilute, Zambia's narrative.
+14. **Optional Google 3D Tiles** for key urban areas (Lusaka, Livingstone, Kabwe) — toggle between Museum Earth and Live Earth.
+15. **Seasonal real-time events** — Kuomboka flood pulse (NASA FIRMS), fire season hotspots, rainfall anomalies — surfaced as Story Compass annotations.
+
 ---
 
 ## 🧭 Final Thought
@@ -435,6 +470,20 @@ This is a lot of information in the top-left corner competing with the title. Th
 This project has something most tech projects lack: **a thesis**. It's not just a globe with pins — it's an argument that Zambia's story spans 900 million years and deserves to be told with the same technical sophistication that Google uses for its maps. The aesthetic is already museum-grade. The content is already deeper than most educational platforms. What's needed now is **navigation clarity** (one panel at a time, one time-nav pattern, globe always on Zambia) and **visual sharpness** (Zambia visible, markers visible, atmosphere crisp).
 
 Fix those, and this becomes one of the most ambitious digital heritage projects in Africa.
+
+---
+
+## Technical Implementation Addendum (from Review)
+
+| Item | Implementation Note |
+|------|----------------------|
+| **Story Compass** | Build first. X-Ray shader = non-textual anchor for Deep Time. |
+| **Globe limb wash** | ACESFilmic + 0.95 directional light blows out texture. Drop light intensity, adjust tone mapping. |
+| **Globe starts Americas** | Fix initial camera position first; drift tuning is secondary. |
+| **Data Sovereignty** | Add label to UI; integrates CopperCloud premise with SovereigntyStackHUD. |
+| **Mobile Isibalo** | 2-row layout, not overflow — keep "Add your memory" visible. |
+
+**Priority order**: Story Compass → lighting fix → Data Sovereignty label.
 
 ---
 
