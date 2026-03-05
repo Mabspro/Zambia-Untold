@@ -22,6 +22,156 @@
 
 ---
 
+## 🔴🔴 Foundational Principle: Anchored Narrative
+
+> *"Every experience must answer the question: Where am I in the story right now?"*
+
+This is the single deepest finding in this audit. Everything else — panel clutter, navigation confusion, globe drift — are **symptoms** of one missing architectural principle:
+
+**The Principle of Anchored Narrative.**
+
+### What It Means
+
+Think about how a physical museum works. When you walk into the Smithsonian Air & Space Museum, every exhibit quietly tells you three things:
+
+1. **Where you are in time**
+2. **Where you are in space**
+3. **Why this artifact matters**
+
+You are never floating. You are always **anchored**.
+
+```
+Gallery 3
+The Age of Flight
+1903–1918
+```
+
+Immediately your brain knows: time, context, theme.
+
+### Where Zambia Untold Is Already Strong
+
+The system already has the pieces:
+
+- Deep Time zones (geological epochs)
+- Epoch labels (era names)
+- Calendar events (historical sequence)
+- Narrative panels (per-marker detail)
+- Globe location (lat/lng, Zambia boundary)
+- Folk tale layer (oral tradition)
+
+This is actually an **extraordinary knowledge framework**. But these are currently **parallel systems** rather than a **single narrative anchor**.
+
+### What Happens Without Narrative Anchoring
+
+A user might experience this sequence:
+
+1. Globe rotating somewhere near Africa
+2. Calendar opens
+3. Deep Time panel opens
+4. Folk tale opens
+5. Narrative panel still visible
+
+Now the brain asks: *"What am I looking at right now?"*
+
+Is it a geological exhibit? A historical moment? A folk tale? A calendar event?
+
+**The system knows the answer. But the user is not always reminded of it.**
+
+### The Simple Rule
+
+Every state of the application should quietly answer: **YOU ARE HERE**
+
+```
+You are in:
+  Human Time · Kingdom Era (1500–1800)
+
+Exhibit:
+  Four Kingdoms of Zambia
+
+Location:
+  Central Africa — Zambia
+```
+
+Or:
+
+```
+You are in:
+  Deep Time · Katanga Formation (880M years ago)
+
+Location:
+  Copperbelt Basin
+```
+
+Now the brain relaxes. The user knows where they are in the story of Zambia.
+
+### The Four Layers of Understanding Place
+
+Zambia Untold already — perhaps unintentionally — created the structure for this:
+
+```
+🪨  Earth    (Geology)     — Deep Time panel
+     ↓
+📅  History  (Events)      — Calendar + Narrative
+     ↓
+✦   Memory   (Isibalo)     — Community contributions
+     ↓
+🔥  Myth     (Inganji)     — Folk tales & oral tradition
+```
+
+These are **four ways humans understand place**. The missing piece is simply **reminding the user where they are inside that ladder**.
+
+### Implementation: The Story Compass
+
+A persistent, minimal **"You Are Here"** indicator — always visible, always accurate:
+
+```tsx
+// components/UI/StoryCompass.tsx
+// Derives from current state: scrubYear, activePanel, selectedMarker
+
+// When on Deep Time panel:
+"🪨 Deep Time · Gondwana Assembly · ~880M years ago"
+
+// When on Calendar:
+"📅 History · March · Zambia's Living Calendar"
+
+// When on Inganji:
+"🔥 Oral Tradition · Tonga Cosmology · Nyami Nyami"
+
+// When on Isibalo:
+"✦ Community Memory · The Living Archive"
+
+// When idle on globe:
+"🌍 Zambia · The Unfinished Sovereign · 2,026 AD"
+```
+
+**Position**: Top-center or just below the title. Small, non-intrusive, but always present. Like the "Gallery 3" placard in a museum hallway.
+
+### Why This Is So Powerful
+
+Most digital maps show **places**.
+Most timelines show **time**.
+This platform shows **civilization across time and place**.
+
+That's much bigger. But the brain needs a compass.
+
+**Narrative anchoring is that compass.**
+
+When implemented, the platform stops feeling like *a globe interface* and starts feeling like **a guided historical atlas** — which is exactly what Zambia Untold wants to be.
+
+### Relationship to Other Audit Findings
+
+| Symptom (Found in Audit) | Root Cause (Anchored Narrative) |
+|--------------------------|-------------------------------|
+| Globe drifts to Americas | User loses spatial anchor |
+| Multiple panels open simultaneously | User loses contextual anchor |
+| 3 time-navigation patterns | No single temporal anchor |
+| No feedback on Village Search fly-to | User loses "where did I land?" anchor |
+| Re-entry prompt is jarring | User loses re-orientation anchor |
+
+**Every critical and major issue in this audit traces back to narrative anchoring.**
+
+---
+
 ## 🔴 Critical Issues (Fix Immediately)
 
 ### 1. Globe Shows Americas/Asia, Not Africa
@@ -256,6 +406,9 @@ This is a lot of information in the top-left corner competing with the title. Th
 ---
 
 ## 🎯 Recommended Priority Fixes
+
+### Sprint C0 (Foundational — build first)
+0. **Build the Story Compass** — a persistent "You Are Here" indicator that derives from `scrubYear`, `activePanel`, `selectedMarker`, and always answers: *Where am I in time? Where am I in space? What layer am I in?* This single component resolves the root cause of issues #1, #2, #4, #5, and #8. It transforms the interface from "exploratory chaos" into a "guided historical atlas."
 
 ### Sprint C1 (Immediate — 1 week)
 1. **Fix globe to stay on Africa** — reduce idle snap, lower autoRotate, center on Zambia
