@@ -1,0 +1,37 @@
+{
+  "name": "zambia-untold",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "build:no-pwa": "cross-env DISABLE_PWA=1 next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "validate": "npm run typecheck && npm run lint && npm run build"
+  },
+  "dependencies": {
+    "@react-three/drei": "^9.108.3",
+    "@react-three/fiber": "^8.17.10",
+    "framer-motion": "^12.23.24",
+    "html2canvas": "^1.4.1",
+    "next": "^14.2.33",
+    "next-pwa": "^5.6.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "three": "^0.179.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.12.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "autoprefixer": "^10.4.20",
+    "cross-env": "^10.1.0",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^14.2.35",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.16",
+    "typescript": "^5.7.2"
+  }
+}

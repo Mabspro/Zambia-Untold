@@ -1,0 +1,354 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  --font-display:
+    "Book Antiqua", "Palatino Linotype", "Palatino", "URW Palladio L",
+    "Baskerville", "Times New Roman", serif;
+  --font-body:
+    "Garamond", "Palatino Linotype", "Book Antiqua", "Baskerville",
+    "Times New Roman", serif;
+  --font-mono:
+    "Courier New", "Nimbus Mono PS", "Liberation Mono", "Lucida Console",
+    monospace;
+  --font-citation:
+    "Garamond", "Palatino Linotype", "Book Antiqua", "Times New Roman", serif;
+  --copper-primary: #b87333;
+  --copper-glow: #d4943a;
+  --ochre-warm: #cc7722;
+  --rock-dark: #1a1612;
+  --rock-mid: #2c2420;
+  --ash-gray: #8b7d6b;
+  --colonial-cool: #3a4a5c;
+  --hydrogen-future: #a8d8ea;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BASE RESET — clean, dark, no warm tints that compete with globe
+   ═══════════════════════════════════════════════════════════════ */
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background-color: #050505;
+  background-image: none;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  color: #f0e6d3;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TYPOGRAPHY UTILITY CLASSES
+   ═══════════════════════════════════════════════════════════════ */
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+.font-citation {
+  font-family: var(--font-citation);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CUSTOM SCROLLBARS — thin, copper-tinted, museum-feel
+   All scroll containers use these for visual consistency.
+   ═══════════════════════════════════════════════════════════════ */
+
+.scrollbar-thin,
+.calendar-scroll,
+.contribution-scroll,
+.folktale-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(184, 115, 51, 0.25) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar,
+.calendar-scroll::-webkit-scrollbar,
+.contribution-scroll::-webkit-scrollbar,
+.folktale-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track,
+.calendar-scroll::-webkit-scrollbar-track,
+.contribution-scroll::-webkit-scrollbar-track,
+.folktale-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb,
+.calendar-scroll::-webkit-scrollbar-thumb,
+.contribution-scroll::-webkit-scrollbar-thumb,
+.folktale-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(184, 115, 51, 0.2);
+  border-radius: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover,
+.calendar-scroll::-webkit-scrollbar-thumb:hover,
+.contribution-scroll::-webkit-scrollbar-thumb:hover,
+.folktale-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(184, 115, 51, 0.4);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TIME SLIDER — deep time scrubber thumb
+   ═══════════════════════════════════════════════════════════════ */
+
+.time-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: #c8851a;
+  border: 1px solid #f0e6d3;
+  box-shadow: 0 0 12px rgba(200, 133, 26, 0.5);
+  cursor: pointer;
+}
+
+.time-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: #c8851a;
+  border: 1px solid #f0e6d3;
+  box-shadow: 0 0 12px rgba(200, 133, 26, 0.5);
+  cursor: pointer;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FORM ELEMENTS — consistent museum aesthetic for inputs/selects
+   ═══════════════════════════════════════════════════════════════ */
+
+input[type="text"],
+input[type="email"],
+input[type="number"],
+textarea,
+select {
+  font-family: var(--font-body);
+}
+
+select option {
+  background-color: #0f0b08;
+  color: #f0e6d3;
+}
+
+/* Checkbox styling override */
+input[type="checkbox"] {
+  accent-color: var(--copper-primary);
+}
+
+/* Remove autofill blue flash */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px #0f0b08 inset;
+  -webkit-text-fill-color: #f0e6d3;
+  border-color: rgba(184, 115, 51, 0.25);
+}
+
+/* Focus ring — copper instead of blue */
+*:focus-visible {
+  outline: 1px solid rgba(184, 115, 51, 0.5);
+  outline-offset: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   KEYFRAMES
+   ═══════════════════════════════════════════════════════════════ */
+
+@keyframes lobby-pulse {
+  0% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.15;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes mwela-expand {
+  0% {
+    opacity: 0.3;
+    transform: scale(0.15);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes subtle-glow {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(184, 115, 51, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(184, 115, 51, 0.3);
+  }
+}
+
+@keyframes fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes breathing {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes idle-suggestion {
+  0% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  10% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  90% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   UTILITY ANIMATIONS
+   ═══════════════════════════════════════════════════════════════ */
+
+.animate-subtle-glow {
+  animation: subtle-glow 3s ease-in-out infinite;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.5s ease-out both;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RENDERING FIXES — ensure crisp layers, no overlay bleed
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Ensure WebGL canvas doesn't get blurred by CSS transforms */
+canvas {
+  image-rendering: auto;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* Prevent backdrop-blur from creating visible edge artifacts on panels */
+.backdrop-blur-sm,
+.backdrop-blur-md,
+.backdrop-blur-xl {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* GPU acceleration for smooth panel transitions */
+[class*="transition-"] {
+  will-change: auto;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LAYER CLARITY — z-index discipline
+   Globe canvas: z-0
+   Data overlays (boundary, markers): z-10
+   UI panels (layers, time): z-20
+   Narrative panel: z-30
+   Calendar/Folk Tales: z-40
+   Modal overlays: z-50
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE REFINEMENTS
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  /* On mobile, prevent panels from covering entire viewport */
+  .fixed.bottom-0 {
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+  }
+
+  /* Minimum touch targets for all interactive elements */
+  button,
+  [role="button"],
+  label {
+    min-height: 36px;
+  }
+
+  /* Narrative panel: slide-up sheet on mobile */
+  .fixed.right-0 {
+    max-height: 60vh;
+  }
+
+  /* Safe area padding for bottom action bar (notch phones) */
+  nav {
+    padding-bottom: max(0.625rem, env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 480px) {
+  /* Extra-small screens: tighter spacing */
+  header {
+    gap: 0.5rem;
+  }
+
+  /* Hide layers panel expanded state on very small screens to save space */
+  aside {
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+}
+
+/* Print styles for export */
+@media print {
+  body {
+    background: white;
+    color: black;
+  }
+  canvas,
+  .pointer-events-none {
+    display: none;
+  }
+}
