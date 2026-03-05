@@ -37,9 +37,28 @@ export function stateFromYear(year: number): SovereigntyState {
     };
   }
 
+  // Kaunda one-party state (1972–1991 UNIP rule)
+  if (year < 1991) {
+    return {
+      governance: "Independent / One-Party State",
+      value: "Nationalized / Contested",
+      infrastructure: "State-Led Development",
+    };
+  }
+
+  // Multi-party democracy era (Chiluba → Lungu)
+  if (year < 2021) {
+    return {
+      governance: "Multi-Party Democracy",
+      value: "Market / Partial Rebalancing",
+      infrastructure: "Mixed Public-Private",
+    };
+  }
+
+  // Hichilema era — SI 68 local content legislation
   return {
     governance: "Independent State",
-    value: "Mixed/Contested",
-    infrastructure: "Rebalancing National",
+    value: "Mixed / SI 68 Era",
+    infrastructure: "Rebalancing Sovereign",
   };
 }

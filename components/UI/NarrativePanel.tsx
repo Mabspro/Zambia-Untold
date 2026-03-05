@@ -21,7 +21,7 @@ type NarrativePanelProps = {
   onDismissContextualCard?: () => void;
 };
 
-type TabId = "story" | "evidence";
+type TabId = "story" | "mythology" | "evidence";
 
 function NarrativeBlocks({ blocks }: { blocks: NarrativeBlock[] }) {
   return (
@@ -229,6 +229,17 @@ export function NarrativePanel({
                   </button>
                   <button
                     type="button"
+                    onClick={() => setActiveTab("mythology")}
+                    className={`px-3 py-1.5 text-[10px] uppercase tracking-[0.2em] transition-colors ${
+                      activeTab === "mythology"
+                        ? "border-b border-copper text-copperSoft"
+                        : "text-muted hover:text-text"
+                    }`}
+                  >
+                    Mythology
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setActiveTab("evidence")}
                     className={`px-3 py-1.5 text-[10px] uppercase tracking-[0.2em] transition-colors ${
                       activeTab === "evidence"
@@ -256,7 +267,7 @@ export function NarrativePanel({
                   className="scrollbar-thin flex-1 overflow-y-auto pr-2"
                 >
                   <AnimatePresence mode="wait">
-                    {activeTab === "story" ? (
+                    {activeTab === "story" && (
                       <motion.div
                         key="story"
                         initial={{ opacity: 0 }}
@@ -290,7 +301,31 @@ export function NarrativePanel({
                           </div>
                         </motion.div>
                       </motion.div>
-                    ) : (
+                    )}
+                    {activeTab === "mythology" && (
+                      <motion.div
+                        key="mythology"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="text-sm"
+                      >
+                        <p className="mb-3 text-[11px] uppercase tracking-[0.18em] text-copperSoft">
+                          Inganji · Folk Tales & Mythology
+                        </p>
+                        <div className="rounded border border-copper/20 bg-copper/5 px-3 py-4 text-center">
+                          <p className="text-[13px] text-[#B8A58F] leading-relaxed">
+                            Folk tale connections for this site are being prepared.
+                          </p>
+                          <p className="mt-2 text-[11px] text-muted">
+                            Visit{" "}
+                            <span className="text-copperSoft">🔥 Inganji</span>{" "}
+                            in the action bar to explore oral traditions.
+                          </p>
+                        </div>
+                      </motion.div>
+                    )}
+                    {activeTab === "evidence" && (
                       <motion.div
                         key="evidence"
                         initial={{ opacity: 0 }}

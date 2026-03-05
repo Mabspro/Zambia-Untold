@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { CanvasWrapper } from "@/components/Layout/CanvasWrapper";
 import { NarrativePanel } from "@/components/UI/NarrativePanel";
@@ -14,6 +14,8 @@ import { FolkTalesPanel } from "@/components/UI/FolkTalesPanel";
 import { ContributionForm } from "@/components/UI/ContributionForm";
 import { DeepTimePanel } from "@/components/UI/DeepTimePanel";
 import { VillageSearch } from "@/components/UI/VillageSearch";
+import { SovereigntyStack } from "@/components/UI/SovereigntyStack";
+import { StoryCompass } from "@/components/UI/StoryCompass";
 import { MARKERS } from "@/data/markers";
 import { DEEP_TIME_MAX, formatZoneForDisplay, getZoneForYear, type DeepTimeZone } from "@/lib/deepTime";
 import { loadMuseumPassport, saveMuseumPassport } from "@/lib/museumPassport";
@@ -55,7 +57,22 @@ export default function HomePage() {
   const [contextualCardDismissed, setContextualCardDismissed] = useState(true);
   const [activePanel, setActivePanel] = useState<ActivePanel>(null);
   const [flyToCoordinate, setFlyToCoordinate] = useState<{ lat: number; lng: number } | null>(null);
+  /** Confirmation pin after Village Search fly-to. Auto-expires via FlyToPin onExpire. */
+  const [flyToPin, setFlyToPin] = useState<{ lat: number; lng: number; placeName?: string } | null>(null);
   const didBootRef = useRef(false);
+
+  /**
+   * openPanel — enforces one-panel-at-a-time rule at the state level.
+   * Opening any overlay clears the narrative panel (selectedMarkerId).
+   * Closing (panel = null) does not restore the marker — user must re-click.
+   */
+  const openPanel = useCallback((panel: ActivePanel) => {
+    setActivePanel(panel);
+    if (panel !== null) {
+      setSelectedMarkerId(null);
+      setContextualCardDismissed(true);
+    }
+  }, []);
 
   const selectedMarker = useMemo(
     () => MARKERS.find((m) => m.id === selectedMarkerId) ?? null,
@@ -165,7 +182,7 @@ export default function HomePage() {
     });
   }, [scrubYear, selectedMarkerId]);
 
-  const handleNavigateToCoordinate = (lat: number, lng: number, markerId?: string) => {
+  const handleNavigateToCoordinate = (lat: number, lng: number, markerId?: string, placeName?: string) => {
     if (markerId) {
       const marker = MARKERS.find((m) => m.id === markerId);
       if (marker) {
@@ -178,7 +195,9 @@ export default function HomePage() {
     }
     // Fly to arbitrary coordinate (Village Search)
     setFlyToCoordinate({ lat, lng });
-    // Reset after a tick so the same coordinate can be re-selected
+    // Drop a confirmation pin at the destination
+    setFlyToPin({ lat, lng, placeName });
+    // Reset flyToCoordinate after a tick so the same coordinate can be re-selected
     setTimeout(() => setFlyToCoordinate(null), 100);
     setActivePanel(null);
   };
@@ -215,6 +234,8 @@ export default function HomePage() {
           layerVisibility={layerVisibility}
           showHUD={showUI}
           flyToCoordinate={flyToCoordinate}
+          flyToPin={flyToPin}
+          onFlyToPinExpire={() => setFlyToPin(null)}
         />
       </CanvasWrapper>
 
@@ -263,6 +284,9 @@ export default function HomePage() {
           <p className="mt-1.5 text-[10px] uppercase tracking-[0.18em] text-copperSoft/90 md:mt-2 md:text-[11px]">
             Galleries Visited: {visitedZones.length}/{TOTAL_GALLERIES}
           </p>
+          <p className="mt-1 text-[9px] font-mono uppercase tracking-[0.16em] text-muted/40">
+            Stored locally · No external tracking
+          </p>
         </div>
         <TimeButtons
           year={scrubYear}
@@ -285,9 +309,9 @@ export default function HomePage() {
         </button>
       )}
 
-      {/* Re-entry prompt */}
+      {/* Re-entry prompt — positioned below the header title card */}
       {reentryZone && isDone && (
-        <aside className="absolute left-1/2 top-4 z-30 w-[min(92vw,520px)] -translate-x-1/2 rounded border border-copper/35 bg-bg/90 px-4 py-3 text-center backdrop-blur md:top-6">
+        <aside className="absolute left-1/2 top-[6.5rem] z-30 w-[min(92vw,420px)] -translate-x-1/2 rounded border border-copper/35 bg-bg/90 px-4 py-3 text-center backdrop-blur md:left-[55%] md:top-[5.5rem] md:translate-x-0">
           <p className="font-display text-[12px] tracking-[0.18em] text-copperSoft">
             You left during {formatZoneForDisplay(reentryZone)}
           </p>
@@ -316,7 +340,7 @@ export default function HomePage() {
           <div className="group relative">
             <button
               type="button"
-              onClick={() => setActivePanel(activePanel === "deepTime" ? null : "deepTime")}
+              onClick={() => openPanel(activePanel === "deepTime" ? null : "deepTime")}
               className={`flex items-center gap-1 rounded px-2 py-1.5 text-[10px] uppercase tracking-[0.12em] transition-all duration-200 md:gap-1.5 md:px-3 md:py-2 md:text-[11px] md:tracking-[0.14em] ${
                 activePanel === "deepTime"
                   ? "bg-copper/20 text-copper border border-copper/40 shadow-[0_0_8px_rgba(184,115,51,0.2)]"
@@ -337,7 +361,7 @@ export default function HomePage() {
           <div className="group relative">
             <button
               type="button"
-              onClick={() => setActivePanel(activePanel === "calendar" ? null : "calendar")}
+              onClick={() => openPanel(activePanel === "calendar" ? null : "calendar")}
               className={`flex items-center gap-1 rounded px-2 py-1.5 text-[10px] uppercase tracking-[0.12em] transition-all duration-200 md:gap-1.5 md:px-3 md:py-2 md:text-[11px] md:tracking-[0.14em] ${
                 activePanel === "calendar"
                   ? "bg-copper/20 text-copper border border-copper/40 shadow-[0_0_8px_rgba(184,115,51,0.2)]"
@@ -356,7 +380,7 @@ export default function HomePage() {
           <div className="group relative">
             <button
               type="button"
-              onClick={() => setActivePanel(activePanel === "folkTales" ? null : "folkTales")}
+              onClick={() => openPanel(activePanel === "folkTales" ? null : "folkTales")}
               className={`flex items-center gap-1 rounded px-2 py-1.5 text-[10px] uppercase tracking-[0.12em] transition-all duration-200 md:gap-1.5 md:px-3 md:py-2 md:text-[11px] md:tracking-[0.14em] ${
                 activePanel === "folkTales"
                   ? "bg-copper/20 text-copper border border-copper/40 shadow-[0_0_8px_rgba(184,115,51,0.2)]"
@@ -375,7 +399,7 @@ export default function HomePage() {
           <div className="group relative">
             <button
               type="button"
-              onClick={() => setActivePanel(activePanel === "villageSearch" ? null : "villageSearch")}
+              onClick={() => openPanel(activePanel === "villageSearch" ? null : "villageSearch")}
               className={`flex items-center gap-1 rounded px-2 py-1.5 text-[10px] uppercase tracking-[0.12em] transition-all duration-200 md:gap-1.5 md:px-3 md:py-2 md:text-[11px] md:tracking-[0.14em] ${
                 activePanel === "villageSearch"
                   ? "bg-copper/20 text-copper border border-copper/40 shadow-[0_0_8px_rgba(184,115,51,0.2)]"
@@ -394,7 +418,7 @@ export default function HomePage() {
           <div className="group relative">
             <button
               type="button"
-              onClick={() => setActivePanel(activePanel === "contribute" ? null : "contribute")}
+              onClick={() => openPanel(activePanel === "contribute" ? null : "contribute")}
               className={`flex items-center gap-1 rounded px-2 py-1.5 text-[10px] uppercase tracking-[0.12em] transition-all duration-200 md:gap-1.5 md:px-3 md:py-2 md:text-[11px] md:tracking-[0.14em] ${
                 activePanel === "contribute"
                   ? "bg-copper/20 text-copper border border-copper/40 shadow-[0_0_8px_rgba(184,115,51,0.2)]"
@@ -428,6 +452,21 @@ export default function HomePage() {
       </div>
 
       {showUI && <DataIssueBanner />}
+
+      {/* Sovereignty Stack — bottom-left, above LayersPanel, desktop only.
+          Flips Governance/Value/Infrastructure state as scrubber moves through epochs.
+          This is the argument, not decoration. */}
+      {showUI && <SovereigntyStack year={scrubYear} />}
+
+      {/* Story Compass — persistent "You Are Here" context indicator.
+          Museum corner label aesthetic — a whisper, not a headline. */}
+      {showUI && (
+        <StoryCompass
+          scrubYear={scrubYear}
+          selectedMarker={selectedMarker}
+          activePanel={activePanel}
+        />
+      )}
 
       {/* Narrative Panel (right side) */}
       {showUI && (

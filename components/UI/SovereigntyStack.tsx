@@ -1,18 +1,15 @@
 /**
  * SovereigntyStack — DOM overlay version.
  *
- * STATUS: UNUSED / SUPERSEDED
+ * STATUS: ACTIVE (restored Sprint C0, March 2026)
  *
- * The active implementation is `components/Globe/SovereigntyStackHUD.tsx`,
- * which renders the Sovereignty Stack as an in-geometry WebGL HUD via
- * Drei `Html` — consistent with the "shaders and instanced meshes over DOM
- * overlays" mandate from MUSEUM_ENHANCEMENT_PLAN.md Appendix C.
+ * The WebGL HUD version (SovereigntyStackHUD.tsx) had a positioning bug —
+ * it rendered 0.1 units in front of the camera creating a full-viewport tint.
+ * This DOM version is the correct active implementation.
  *
- * This file is retained as a DOM-render fallback in case a future use case
- * (e.g. screenshot export, accessibility mode) requires a non-WebGL version.
- * If no such use case materialises, delete this file on the next cleanup pass.
- *
- * TD-03 — tracked in TECH_AUDIT_MATRIX.md.
+ * Positioned: bottom-left, above the LayersPanel, below the header.
+ * Small and non-intrusive — it whispers the argument, doesn't shout it.
+ * Hidden on mobile to preserve screen real estate.
  */
 
 import { stateFromYear } from "@/lib/sovereignty";
@@ -25,21 +22,25 @@ export function SovereigntyStack({ year }: SovereigntyStackProps) {
   const state = stateFromYear(year);
 
   return (
-    <aside className="pointer-events-none absolute right-4 top-24 z-20 w-[270px] rounded border border-copper/35 bg-bg/70 p-3 text-[10px] uppercase tracking-[0.16em] text-text backdrop-blur-xl md:right-7 md:top-6">
-      <p className="mb-3 text-[9px] tracking-[0.22em] text-copperSoft">Sovereignty Stack</p>
-
-      <div className="grid gap-2">
-        <div className="border border-copper/25 bg-panel/70 px-2 py-2">
-          <p className="text-[9px] text-muted">Governance Layer</p>
-          <p className="mt-1 text-[10px] text-text">{state.governance}</p>
+    <aside
+      className="pointer-events-none hidden md:block fixed left-7 bottom-24 z-20 w-[220px] rounded border border-copper/25 bg-bg/75 p-2.5 text-[10px] uppercase tracking-[0.14em] text-text backdrop-blur-sm"
+      aria-label="Sovereignty Stack"
+    >
+      <p className="mb-2 text-[8px] tracking-[0.22em] text-copper/60">
+        Sovereignty Stack
+      </p>
+      <div className="grid gap-1.5">
+        <div className="border border-copper/15 bg-panel/50 px-2 py-1.5">
+          <p className="text-[8px] text-muted/70">Governance</p>
+          <p className="mt-0.5 text-[9px] text-text/80">{state.governance}</p>
         </div>
-        <div className="border border-copper/25 bg-panel/70 px-2 py-2">
-          <p className="text-[9px] text-muted">Value Layer</p>
-          <p className="mt-1 text-[10px] text-text">{state.value}</p>
+        <div className="border border-copper/15 bg-panel/50 px-2 py-1.5">
+          <p className="text-[8px] text-muted/70">Value Flow</p>
+          <p className="mt-0.5 text-[9px] text-text/80">{state.value}</p>
         </div>
-        <div className="border border-copper/25 bg-panel/70 px-2 py-2">
-          <p className="text-[9px] text-muted">Infrastructure Layer</p>
-          <p className="mt-1 text-[10px] text-text">{state.infrastructure}</p>
+        <div className="border border-copper/15 bg-panel/50 px-2 py-1.5">
+          <p className="text-[8px] text-muted/70">Infrastructure</p>
+          <p className="mt-0.5 text-[9px] text-text/80">{state.infrastructure}</p>
         </div>
       </div>
     </aside>

@@ -17,11 +17,11 @@ import {
 import { lttbDownsample, type LTTBPoint } from "@/lib/lttb";
 import { GlobeMarker } from "./GlobeMarker";
 import { CameraRig } from "./CameraRig";
+import { FlyToPin } from "./FlyToPin";
 import { LusakaParticleSwarm } from "./LusakaParticleSwarm";
 import { ZambiaBoundary } from "./ZambiaBoundary";
 import { ProvinceHighlight } from "./ProvinceHighlight";
 import { ZambeziLayer } from "./ZambeziLayer";
-import { SovereigntyStackHUD } from "./SovereigntyStackHUD";
 import { KatangaFormationLayer } from "./KatangaFormationLayer";
 import type { LayerVisibility } from "@/lib/types";
 
@@ -32,6 +32,9 @@ type GlobeProps = {
   layerVisibility?: LayerVisibility;
   showHUD?: boolean;
   flyToCoordinate?: { lat: number; lng: number } | null;
+  /** Temporary confirmation pin after Village Search fly-to. Auto-expires. */
+  flyToPin?: { lat: number; lng: number; placeName?: string } | null;
+  onFlyToPinExpire?: () => void;
 };
 
 type CityLightsProps = {
@@ -126,8 +129,8 @@ const ATMOSPHERE_FAR = 3.5;
 // Reduced from 0.18/0.06 — the dark-amber atmosphere was muddying the earth
 // texture at all zoom levels. Near-black keeps the edge-glow effect without
 // washing out surface detail or competing with data layers.
-const ATMOSPHERE_OPACITY_NEAR = 0.07;
-const ATMOSPHERE_OPACITY_FAR = 0.015;
+const ATMOSPHERE_OPACITY_NEAR = 0.04;
+const ATMOSPHERE_OPACITY_FAR = 0.012;
 
 /** Epoch tint overlay — commented out for better contrast. Restore by uncommenting the mesh below. */
 // const EPOCH_OVERLAY_ENABLED = process.env.NEXT_PUBLIC_EPOCH_OVERLAY === "1";
@@ -139,6 +142,8 @@ function Scene({
   layerVisibility = DEFAULT_LAYERS,
   showHUD = true,
   flyToCoordinate,
+  flyToPin,
+  onFlyToPinExpire,
 }: GlobeProps) {
   const { clock, gl, camera } = useThree();
   const globeRef = useRef<THREE.Group>(null);
@@ -269,8 +274,8 @@ function Scene({
       if (lastInteractionRef.current === 0) lastInteractionRef.current = now;
       const idleTime = now - lastInteractionRef.current;
 
-      // Extend to 15s so the autoRotate has time to spin freely
-      if (idleTime > 15) {
+      // Snap after 8s — keeps Africa anchored as the mental model
+      if (idleTime > 8) {
         snapActiveRef.current = true;
       }
 
@@ -346,18 +351,18 @@ function Scene({
   return (
     <>
       <color attach="background" args={["#030405"]} />
-      <ambientLight intensity={0.28} />
-      <directionalLight position={[2.5, 1.5, 3]} intensity={0.95} color="#e8ecf4" />
-      <directionalLight position={[-2, -1, -2]} intensity={0.15} color="#ffffff" />
+      <ambientLight intensity={0.32} />
+      <directionalLight position={[2.5, 1.5, 3]} intensity={0.75} color="#e8ecf4" />
+      <directionalLight position={[-2, -1, -2]} intensity={0.08} color="#ffffff" />
 
-      <Stars radius={120} depth={40} count={900} factor={3} saturation={0} fade />
+      <Stars radius={120} depth={40} count={500} factor={3} saturation={0} fade />
       <Sparkles
-        count={50}
+        count={22}
         scale={[2.5, 2.5, 2.5]}
-        size={2}
-        speed={0.08}
+        size={1.0}
+        speed={0.05}
         color="#B87333"
-        opacity={0.18}
+        opacity={0.12}
       />
 
       <OrbitControls
@@ -371,7 +376,7 @@ function Scene({
         enableDamping
         dampingFactor={0.045}
         autoRotate={!selectedMarker} // Only autoRotate if no marker is active
-        autoRotateSpeed={0.35}
+        autoRotateSpeed={0.15}
         minPolarAngle={0.15}
         maxPolarAngle={Math.PI - 0.15}
         onStart={() => {
@@ -448,6 +453,16 @@ function Scene({
         ))}
       </group>
 
+      {/* Village Search fly-to confirmation pin — auto-expires after 10s */}
+      {flyToPin && (
+        <FlyToPin
+          key={`${flyToPin.lat}-${flyToPin.lng}`}
+          lat={flyToPin.lat}
+          lng={flyToPin.lng}
+          placeName={flyToPin.placeName}
+          onExpire={onFlyToPinExpire}
+        />
+      )}
       {/* SovereigntyStackHUD removed from 3D scene — it was positioned 0.1
           units in front of the camera with a dark-brown bg, acting as a
           full-viewport tint. Sovereignty data now shown in the UI layer. */}
@@ -483,6 +498,8 @@ export function Globe({
   layerVisibility,
   showHUD = true,
   flyToCoordinate,
+  flyToPin,
+  onFlyToPinExpire,
 }: GlobeProps) {
   const fov = useResponsiveFov(42);
 
@@ -495,12 +512,12 @@ export function Globe({
         powerPreference: "high-performance",
         preserveDrawingBuffer: true,
         toneMapping: THREE.ACESFilmicToneMapping,
-        toneMappingExposure: 1.0,
+        toneMappingExposure: 0.9,
         outputColorSpace: THREE.SRGBColorSpace,
       } as any}
       onCreated={({ gl: renderer }) => {
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.0;
+        renderer.toneMappingExposure = 0.9;
         renderer.outputColorSpace = THREE.SRGBColorSpace;
       }}
       camera={{
@@ -515,6 +532,8 @@ export function Globe({
         layerVisibility={layerVisibility}
         showHUD={showHUD}
         flyToCoordinate={flyToCoordinate}
+        flyToPin={flyToPin}
+        onFlyToPinExpire={onFlyToPinExpire}
       />
     </Canvas>
   );

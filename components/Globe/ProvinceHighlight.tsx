@@ -46,7 +46,7 @@ export function ProvinceHighlight({ activeMarkerId }: ProvinceHighlightProps) {
   const activeProvince = useMemo(() => {
     if (!provinceName) return null;
     return provinces.find(
-      (p) => p.name === provinceName || p.name.replace(" ", "-") === provinceName.replace(" ", "-")
+      (p) => p.name === provinceName || p.name.replace(/\s+/g, "-") === provinceName.replace(/\s+/g, "-")
     );
   }, [provinceName, provinces]);
 
