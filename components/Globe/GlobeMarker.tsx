@@ -42,10 +42,13 @@ export function GlobeMarker({ marker, active, onClick }: GlobeMarkerProps) {
     meshRef.current.scale.lerp(scaleVec.current, 0.1);
   });
 
-  // Marker taxonomy: geological = stone/earth tone, core = copper glow
+  // Marker taxonomy: geological = warm amber, core = vivid red-orange
   const layer = marker.layer ?? "core";
   const isGeological = layer === "geological";
-  const displayColor = isGeological ? "#8B7355" : marker.color;
+  // High-contrast colors that pop against the dark globe
+  const coreColor = "#FF3B30";      // Vivid red for core markers
+  const geoColor = "#FF8C00";       // Deep orange for geological
+  const displayColor = isGeological ? geoColor : coreColor;
 
   return (
     <group
@@ -64,25 +67,25 @@ export function GlobeMarker({ marker, active, onClick }: GlobeMarkerProps) {
         document.body.style.cursor = "auto";
       }}
     >
-      {/* Outer Glow Halo — geological markers: subtler earth tone */}
+      {/* Outer Glow Halo — large, bright, unmissable */}
       <mesh ref={meshRef}>
-        <sphereGeometry args={[0.022, 20, 20]} />
+        <sphereGeometry args={[0.038, 20, 20]} />
         <meshBasicMaterial
           color={displayColor}
           transparent
-          opacity={active ? (isGeological ? 0.45 : 0.6) : (isGeological ? 0.18 : 0.25)}
+          opacity={active ? 0.7 : 0.35}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
-        {/* Core Solid Marker */}
+        {/* Core Solid Marker — bright, solid center */}
         <mesh>
-          <sphereGeometry args={[0.012, 14, 14]} />
+          <sphereGeometry args={[0.018, 16, 16]} />
           <meshStandardMaterial
             color={displayColor}
             emissive={displayColor}
-            emissiveIntensity={active ? (isGeological ? 2.5 : 5) : (isGeological ? 1.2 : 2.2)}
+            emissiveIntensity={active ? 8 : 3.5}
             transparent
-            opacity={active ? 1 : 0.7}
+            opacity={active ? 1 : 0.85}
           />
         </mesh>
       </mesh>
