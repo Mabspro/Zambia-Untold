@@ -16,6 +16,9 @@ import { DeepTimePanel } from "@/components/UI/DeepTimePanel";
 import { VillageSearch } from "@/components/UI/VillageSearch";
 import { SovereigntyStack } from "@/components/UI/SovereigntyStack";
 import { StoryCompass } from "@/components/UI/StoryCompass";
+import { SpaceSignal } from "@/components/UI/SpaceSignal";
+import { SpaceMissionBuilder } from "@/components/UI/SpaceMissionBuilder";
+import { NkolosoCinematic } from "@/components/UI/NkolosoCinematic";
 import { MARKERS } from "@/data/markers";
 import { DEEP_TIME_MAX, formatZoneForDisplay, getZoneForYear, type DeepTimeZone } from "@/lib/deepTime";
 import { loadMuseumPassport, saveMuseumPassport } from "@/lib/museumPassport";
@@ -36,6 +39,9 @@ const DEFAULT_LAYERS: LayerVisibility = {
   province: true,
   particles: true,
   zambezi: true,
+  space: true,
+  earthObservation: true,
+  liveSatellites: true,
 };
 
 const LOBBY_STORAGE_KEY = "zambia-untold:lobby-seen";
@@ -43,7 +49,7 @@ const REENTRY_PROMPT_KEY = "zambia-untold:reentry-prompt-shown";
 const TOTAL_GALLERIES = 8;
 
 type LobbyPhase = "preload" | "globe" | "thesis" | "ui" | "pulse" | "done";
-type ActivePanel = null | "calendar" | "folkTales" | "contribute" | "deepTime" | "villageSearch";
+type ActivePanel = null | "calendar" | "folkTales" | "contribute" | "deepTime" | "villageSearch" | "spaceMission";
 
 export default function HomePage() {
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
@@ -59,7 +65,10 @@ export default function HomePage() {
   const [flyToCoordinate, setFlyToCoordinate] = useState<{ lat: number; lng: number } | null>(null);
   /** Confirmation pin after Village Search fly-to. Auto-expires via FlyToPin onExpire. */
   const [flyToPin, setFlyToPin] = useState<{ lat: number; lng: number; placeName?: string } | null>(null);
+  const [layersExpanded, setLayersExpanded] = useState(false);
+  const [showNkolosoCinematic, setShowNkolosoCinematic] = useState(false);
   const didBootRef = useRef(false);
+  const lobbyTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   /**
    * openPanel — enforces one-panel-at-a-time rule at the state level.
@@ -71,7 +80,15 @@ export default function HomePage() {
     if (panel !== null) {
       setSelectedMarkerId(null);
       setContextualCardDismissed(true);
+          setShowNkolosoCinematic(false);
+        }
+  }, []);
+
+  const clearLobbyTimers = useCallback(() => {
+    for (const id of lobbyTimersRef.current) {
+      clearTimeout(id);
     }
+    lobbyTimersRef.current = [];
   }, []);
 
   const selectedMarker = useMemo(
@@ -96,6 +113,7 @@ export default function HomePage() {
       // Dismiss the Terminal Record contextual card for return visitors
       // so they see a clean globe on refresh
       setContextualCardDismissed(true);
+      setShowNkolosoCinematic(false);
       if (!window.sessionStorage.getItem(REENTRY_PROMPT_KEY)) {
         setReentryZone(passport.lastZone);
         window.sessionStorage.setItem(REENTRY_PROMPT_KEY, "1");
@@ -106,6 +124,9 @@ export default function HomePage() {
       setLobbyPhase("done");
     }
     didBootRef.current = true;
+    return () => {
+      document.head.removeChild(link);
+    };
   }, []);
 
   useEffect(() => {
@@ -119,10 +140,12 @@ export default function HomePage() {
       if (event.key === "Escape") {
         if (activePanel) {
           setActivePanel(null);
+          setShowNkolosoCinematic(false);
         } else if (selectedMarkerId) {
           setSelectedMarkerId(null);
         } else {
           setContextualCardDismissed(true);
+          setShowNkolosoCinematic(false);
         }
       }
     };
@@ -130,10 +153,11 @@ export default function HomePage() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [selectedMarkerId, activePanel]);
 
-  const lobbyTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
-
   useEffect(() => {
-    if (lobbyPhase !== "globe") return;
+    if (lobbyPhase !== "globe") {
+      clearLobbyTimers();
+      return;
+    }
 
     const t1 = setTimeout(() => setLobbyPhase("thesis"), 1500);
     const t2 = setTimeout(() => setLobbyPhase("ui"), 3500);
@@ -146,15 +170,10 @@ export default function HomePage() {
     }, 6500);
 
     lobbyTimersRef.current = [t1, t2, t3, t4];
-  }, [lobbyPhase]);
-
-  useEffect(() => {
     return () => {
-      for (const id of lobbyTimersRef.current) {
-        clearTimeout(id);
-      }
+      clearLobbyTimers();
     };
-  }, []);
+  }, [lobbyPhase, clearLobbyTimers]);
 
   useEffect(() => {
     if (!didBootRef.current) return;
@@ -190,6 +209,7 @@ export default function HomePage() {
         setScrubYear(marker.epoch);
         setContextualCardDismissed(false);
         setActivePanel(null);
+        setShowNkolosoCinematic(false);
         return;
       }
     }
@@ -200,6 +220,7 @@ export default function HomePage() {
     // Reset flyToCoordinate after a tick so the same coordinate can be re-selected
     setTimeout(() => setFlyToCoordinate(null), 100);
     setActivePanel(null);
+    setShowNkolosoCinematic(false);
   };
 
   const isDone = lobbyPhase === "done";
@@ -230,6 +251,7 @@ export default function HomePage() {
             setScrubYear(marker.epoch);
             setContextualCardDismissed(false);
             setActivePanel(null);
+            setShowNkolosoCinematic(marker.id === "nkoloso-space-academy");
           }}
           layerVisibility={layerVisibility}
           showHUD={showUI}
@@ -270,11 +292,11 @@ export default function HomePage() {
 
       {/* Header: Title + Time Navigation */}
       <header
-        className={`absolute left-0 right-0 top-3 z-20 flex flex-col items-center gap-2 px-3 transition-opacity duration-700 md:left-7 md:right-auto md:top-6 md:items-start md:px-0 ${
+        className={`absolute left-0 right-0 top-3 z-30 flex flex-col items-center gap-2 px-3 transition-opacity duration-700 md:left-7 md:right-auto md:top-6 md:items-start md:px-0 ${
           showUI ? "opacity-100" : "opacity-0"
         }`}
       >
-        <div className="pointer-events-none w-full max-w-[92vw] rounded border border-copper/25 bg-bg/70 px-4 py-2.5 text-center backdrop-blur-sm md:w-auto md:max-w-none md:px-4 md:py-3 md:text-left">
+        <div className="museum-card pointer-events-none w-full max-w-[92vw] rounded border border-copper/25 bg-bg/70 px-4 py-2.5 text-center backdrop-blur-sm md:w-auto md:max-w-none md:px-4 md:py-3 md:text-left">
           <p className="font-display text-xl tracking-[0.2em] text-copper md:text-2xl lg:text-3xl">
             ZAMBIA UNTOLD
           </p>
@@ -294,6 +316,7 @@ export default function HomePage() {
             setScrubYear(year);
             setSelectedMarkerId(null);
             setContextualCardDismissed(false);
+            setShowNkolosoCinematic(false);
           }}
         />
       </header>
@@ -302,7 +325,13 @@ export default function HomePage() {
       {lobbyPhase !== "done" && lobbyPhase !== "preload" && (
         <button
           type="button"
-          onClick={() => setLobbyPhase("done")}
+          onClick={() => {
+            clearLobbyTimers();
+            setLobbyPhase("done");
+            if (typeof window !== "undefined") {
+              window.sessionStorage.setItem(LOBBY_STORAGE_KEY, "1");
+            }
+          }}
           className="absolute right-4 top-4 z-30 rounded border border-copper/35 bg-bg/70 px-3 py-1.5 text-[10px] uppercase tracking-[0.16em] text-copperSoft backdrop-blur hover:border-copper md:right-7 md:top-6"
         >
           Skip Intro
@@ -448,15 +477,45 @@ export default function HomePage() {
           visibility={layerVisibility}
           onVisibilityChange={setLayerVisibility}
           visitedZones={visitedZones}
+          onExpandedChange={setLayersExpanded}
+          onSelectMarker={(markerId) => {
+            const marker = MARKERS.find((m) => m.id === markerId);
+            if (!marker) return;
+            setSelectedMarkerId(marker.id);
+            setScrubYear(marker.epoch);
+            setContextualCardDismissed(false);
+            setActivePanel(null);
+            setShowNkolosoCinematic(marker.id === "nkoloso-space-academy");
+          }}
+          onOpenSpaceMission={() => openPanel("spaceMission")}
+          onEraSelect={(year) => {
+            setScrubYear(year);
+            setSelectedMarkerId(null);
+            setContextualCardDismissed(false);
+            setShowNkolosoCinematic(false);
+          }}
         />
       </div>
 
       {showUI && <DataIssueBanner />}
+      {showUI && (
+        <NkolosoCinematic
+          active={showNkolosoCinematic}
+          onDone={() => setShowNkolosoCinematic(false)}
+        />
+      )}
+      {showUI && ( 
+        <SpaceSignal
+          enabled={layerVisibility.space !== false}
+          earthObservationEnabled={layerVisibility.earthObservation !== false}
+          onOpenMissionBuilder={() => openPanel("spaceMission")}
+        />
+      )}
 
       {/* Sovereignty Stack — bottom-left, above LayersPanel, desktop only.
           Flips Governance/Value/Infrastructure state as scrubber moves through epochs.
           This is the argument, not decoration. */}
-      {showUI && <SovereigntyStack year={scrubYear} />}
+      {showUI && !layersExpanded && <SovereigntyStack year={scrubYear} />}
 
       {/* Story Compass — persistent "You Are Here" context indicator.
           Museum corner label aesthetic — a whisper, not a headline. */}
@@ -508,7 +567,15 @@ export default function HomePage() {
         {activePanel === "villageSearch" && (
           <VillageSearch
             key="villageSearch"
-            onNavigate={(lat, lng) => handleNavigateToCoordinate(lat, lng)}
+            onNavigate={(lat, lng, placeName) =>
+              handleNavigateToCoordinate(lat, lng, undefined, placeName)
+            }
+            onClose={() => setActivePanel(null)}
+          />
+        )}
+        {activePanel === "spaceMission" && (
+          <SpaceMissionBuilder
+            key="spaceMission"
             onClose={() => setActivePanel(null)}
           />
         )}
@@ -519,6 +586,24 @@ export default function HomePage() {
           />
         )}
       </AnimatePresence>
+
+      <p className="pointer-events-none absolute bottom-1 left-1/2 z-20 hidden -translate-x-1/2 font-mono text-[8px] uppercase tracking-[0.16em] text-copper/45 md:block">
+        Sovereign Infrastructure · Powered by CopperCloud · Zambia
+      </p>
     </main>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+

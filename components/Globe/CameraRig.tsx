@@ -15,6 +15,8 @@ type CameraRigProps = {
   controlsRef: MutableRefObject<OrbitControlsType | null>;
 };
 
+const NKOLOSO_ID = "nkoloso-space-academy";
+
 export function CameraRig({ selectedMarker, flyToCoordinate, controlsRef }: CameraRigProps) {
   const { camera } = useThree();
 
@@ -26,15 +28,22 @@ export function CameraRig({ selectedMarker, flyToCoordinate, controlsRef }: Came
   const pendingMarkerRef = useRef<Marker | null>(null);
   const pendingCoordRef = useRef<{ lat: number; lng: number } | null>(null);
 
+  const cinematicActiveRef = useRef(false);
+  const cinematicStartRef = useRef(-1);
+  const cinematicNearPosRef = useRef(new THREE.Vector3());
+  const cinematicFarPosRef = useRef(new THREE.Vector3());
+  const cinematicTargetRef = useRef(new THREE.Vector3());
+
   useEffect(() => {
     if (!selectedMarker) {
       pendingMarkerRef.current = null;
+      cinematicActiveRef.current = false;
+      cinematicStartRef.current = -1;
       return;
     }
     pendingMarkerRef.current = selectedMarker;
   }, [selectedMarker]);
 
-  // Handle flyToCoordinate (from Village Search)
   useEffect(() => {
     if (!flyToCoordinate) {
       pendingCoordRef.current = null;
@@ -43,24 +52,32 @@ export function CameraRig({ selectedMarker, flyToCoordinate, controlsRef }: Came
     pendingCoordRef.current = { ...flyToCoordinate };
   }, [flyToCoordinate]);
 
-  useFrame((_, delta) => {
-    // Start or interrupt flight when a new marker is selected
+  useFrame(({ clock }, delta) => {
     if (pendingMarkerRef.current && controlsRef.current) {
       const marker = pendingMarkerRef.current;
       pendingMarkerRef.current = null;
 
       fromPos.current.copy(camera.position);
       fromTarget.current.copy(controlsRef.current.target);
-      toPos.current.copy(
-        cameraFromMarker(marker.coordinates.lat, marker.coordinates.lng, 1.95)
-      );
-      toTarget.current.copy(
-        targetFromMarker(marker.coordinates.lat, marker.coordinates.lng, 1.02)
-      );
+
+      const markerNear = cameraFromMarker(marker.coordinates.lat, marker.coordinates.lng, 1.95);
+      const markerTarget = targetFromMarker(marker.coordinates.lat, marker.coordinates.lng, 1.02);
+
+      toPos.current.copy(markerNear);
+      toTarget.current.copy(markerTarget);
       progress.current = 0;
+
+      if (marker.id === NKOLOSO_ID) {
+        cinematicActiveRef.current = true;
+        cinematicStartRef.current = -1;
+        cinematicNearPosRef.current.copy(cameraFromMarker(marker.coordinates.lat, marker.coordinates.lng, 1.9));
+        cinematicFarPosRef.current.copy(cameraFromMarker(marker.coordinates.lat, marker.coordinates.lng, 3.45));
+        cinematicTargetRef.current.copy(markerTarget);
+      } else {
+        cinematicActiveRef.current = false;
+      }
     }
 
-    // Start flight when flyToCoordinate is set (Village Search)
     if (pendingCoordRef.current && controlsRef.current) {
       const { lat, lng } = pendingCoordRef.current;
       pendingCoordRef.current = null;
@@ -70,34 +87,71 @@ export function CameraRig({ selectedMarker, flyToCoordinate, controlsRef }: Came
       toPos.current.copy(cameraFromMarker(lat, lng, 1.95));
       toTarget.current.copy(targetFromMarker(lat, lng, 1.02));
       progress.current = 0;
+      cinematicActiveRef.current = false;
+      cinematicStartRef.current = -1;
     }
 
-    if (progress.current >= 1) return;
-    
-    if (controlsRef.current) {
-      controlsRef.current.enabled = false; // Disable user dragging while flying
-      controlsRef.current.autoRotate = false; // Prevent autoRotate fighting the rig
-    }
+    const controls = controlsRef.current;
 
-    progress.current = Math.min(1, progress.current + delta / 2.5);
-
-    // Smoother, silkier ease function (easeInOut cubic/quart blend) for takeoff and landing
-    const t = progress.current;
-    const eased = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-
-    const nextPos = quadraticArc(fromPos.current, toPos.current, eased);
-    const nextTarget = fromTarget.current.clone().lerp(toTarget.current, eased);
-
-    camera.position.copy(nextPos);
-    if (controlsRef.current) {
-      controlsRef.current.target.copy(nextTarget);
-      controlsRef.current.update();
-      if (t >= 1) {
-        controlsRef.current.enabled = true; // Re-enable user dragging once landed
+    if (progress.current < 1) {
+      if (controls) {
+        controls.enabled = false;
+        controls.autoRotate = false;
       }
-    } else {
-      camera.lookAt(nextTarget);
+
+      progress.current = Math.min(1, progress.current + delta / 2.5);
+      const t = progress.current;
+      const eased = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+      const nextPos = quadraticArc(fromPos.current, toPos.current, eased);
+      const nextTarget = fromTarget.current.clone().lerp(toTarget.current, eased);
+
+      camera.position.copy(nextPos);
+      if (controls) {
+        controls.target.copy(nextTarget);
+        controls.update();
+      } else {
+        camera.lookAt(nextTarget);
+      }
+      return;
     }
+
+    if (!cinematicActiveRef.current || !controls) {
+      if (controls) controls.enabled = true;
+      return;
+    }
+
+    if (cinematicStartRef.current < 0) {
+      cinematicStartRef.current = clock.elapsedTime;
+    }
+
+    controls.enabled = false;
+    controls.autoRotate = false;
+
+    const elapsed = clock.elapsedTime - cinematicStartRef.current;
+
+    if (elapsed < 2.6) {
+      camera.position.lerp(cinematicNearPosRef.current, 0.06);
+      controls.target.lerp(cinematicTargetRef.current, 0.08);
+    } else if (elapsed < 6.4) {
+      const t = (elapsed - 2.6) / 3.8;
+      const eased = t * t * (3 - 2 * t);
+      const pos = cinematicNearPosRef.current.clone().lerp(cinematicFarPosRef.current, eased);
+      camera.position.lerp(pos, 0.1);
+      controls.target.lerp(cinematicTargetRef.current, 0.08);
+    } else if (elapsed < 8.8) {
+      const t = (elapsed - 6.4) / 2.4;
+      const eased = t * t * (3 - 2 * t);
+      const pos = cinematicFarPosRef.current.clone().lerp(cinematicNearPosRef.current, eased);
+      camera.position.lerp(pos, 0.1);
+      controls.target.lerp(cinematicTargetRef.current, 0.08);
+    } else {
+      cinematicActiveRef.current = false;
+      cinematicStartRef.current = -1;
+      controls.enabled = true;
+    }
+
+    controls.update();
   });
 
   return null;

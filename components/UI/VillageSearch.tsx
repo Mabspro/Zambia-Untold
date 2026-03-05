@@ -12,7 +12,7 @@ type SearchResult = {
 };
 
 type VillageSearchProps = {
-  onNavigate: (lat: number, lng: number) => void;
+  onNavigate: (lat: number, lng: number, placeName?: string) => void;
   onClose: () => void;
 };
 
@@ -20,25 +20,10 @@ async function searchZambia(query: string): Promise<SearchResult[]> {
   if (!query.trim() || query.length < 2) return [];
 
   try {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
-        query
-      )},Zambia&format=json&limit=8&addressdetails=1&countrycodes=zm`,
-      {
-        headers: {
-          "User-Agent": "ZambiaUntold/1.0 (https://github.com/Mabspro/Zambia-Untold)",
-        },
-      }
-    );
+    const res = await fetch(`/api/geocode?q=${encodeURIComponent(query)}`);
     if (!res.ok) return [];
-    const data = await res.json();
-    return data.map((r: any) => ({
-      name: r.name || r.display_name.split(",")[0],
-      displayName: r.display_name,
-      lat: parseFloat(r.lat),
-      lng: parseFloat(r.lon),
-      type: r.type || "place",
-    }));
+    const data = (await res.json()) as { results?: SearchResult[] };
+    return Array.isArray(data.results) ? data.results : [];
   } catch {
     return [];
   }
@@ -92,14 +77,21 @@ export function VillageSearch({ onNavigate, onClose }: VillageSearchProps) {
   const [searched, setSearched] = useState(false);
   const [selectedPlace, setSelectedPlace] = useState<SearchResult | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const focusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const requestSeqRef = useRef(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Focus input on mount
   useEffect(() => {
-    setTimeout(() => inputRef.current?.focus(), 300);
+    focusTimerRef.current = setTimeout(() => inputRef.current?.focus(), 300);
+    return () => {
+      if (focusTimerRef.current) clearTimeout(focusTimerRef.current);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
   }, []);
 
   const doSearch = useCallback(async (q: string) => {
+    const seq = ++requestSeqRef.current;
     if (q.length < 2) {
       setResults([]);
       setSearched(false);
@@ -107,6 +99,7 @@ export function VillageSearch({ onNavigate, onClose }: VillageSearchProps) {
     }
     setLoading(true);
     const res = await searchZambia(q);
+    if (seq !== requestSeqRef.current) return;
     setResults(res);
     setSearched(true);
     setLoading(false);
@@ -121,7 +114,7 @@ export function VillageSearch({ onNavigate, onClose }: VillageSearchProps) {
 
   const handleSelect = (result: SearchResult) => {
     setSelectedPlace(result);
-    onNavigate(result.lat, result.lng);
+    onNavigate(result.lat, result.lng, result.name);
   };
 
   // Zambia-specific place suggestions
@@ -327,3 +320,4 @@ export function VillageSearch({ onNavigate, onClose }: VillageSearchProps) {
     </motion.aside>
   );
 }
+

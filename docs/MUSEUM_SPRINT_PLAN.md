@@ -243,3 +243,42 @@ A1 (Deep Time) → A2 (Globe + Mineral) → A3 (UX + Closing)
 3. **Phase C prep:** Design Supabase schema per LIVING_ARCHIVE_SPEC Appendix C. Seed 8 contributions before launch (Content Architecture doc).
 4. **Phase C2 prep:** Use INGANJI_SPEC + Content Architecture doc for Nyami Nyami as first folk tale. Launch sequence: Nyami Nyami → Kuomboka → Chitimukulu.
 5. Re-run `npm run lint` and `npm run build` in a network-enabled environment.
+
+---
+
+## Progress Update (March 2026)
+
+### Newly completed against plan
+- C0 stabilization goals are materially complete in runtime UX (story anchoring, single-focus panel behavior, stack/panel layering).
+- Space-forward C1 bridge implemented ahead of full Phase D split-screen:
+  - NORAD/CelesTrak TLE ingestion with SGP4 propagation route
+  - live curated satellite catalog route
+  - Earth Observation event feed route (NASA EONET)
+  - in-app SpaceSignal, mission builder scaffold, Nkoloso cinematic
+
+### Immediate next actions
+1. Add caching and background refresh for NORAD propagation route.
+2. Render propagated NORAD sample points directly on globe with a `LIVE SATELLITES` visual mode.
+3. Integrate EO imagery tiles under `Earth observation` toggle.
+4. Advance Isibalo backend (Supabase) and connect mission/community submissions to moderation.
+
+
+## Progress Update (March 5, 2026 - C0/C1 Bridge Closed)
+
+### Delivered
+- Live data hardening completed:
+  - NORAD and EONET endpoints now use in-memory SWR caching with guarded refresh.
+- Space visualization advanced:
+  - Live propagated NORAD sample now appears on-globe as selectable `Live satellites` objects.
+- Earth Observation advanced:
+  - Added NASA GIBS imagery endpoint and subtle on-globe EO texture overlay.
+- Moderation backend path connected:
+  - `ContributionForm` and `SpaceMissionBuilder` now submit through API routes with Supabase-write support and robust local fallback.
+- Cinematic polish:
+  - Nkoloso sequence includes synchronized ambient tone layer with user toggle.
+
+### Remaining priorities
+1. Supabase environment + table wiring verification.
+2. Approved-content retrieval and rendering on globe.
+3. Mobile + low-bandwidth QA for new layers/audio controls.
+4. Build pipeline environment fix (`spawn EPERM`) and full validate rerun.

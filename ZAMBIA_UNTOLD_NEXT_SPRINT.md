@@ -630,3 +630,68 @@ When all of that is true, the platform earns its own thesis: *the history you we
 
 
 
+
+## Alignment Addendum — Space + Visual Clarity (March 5, 2026)
+
+Aligned after CTO/UI-UX review and current implementation pass:
+1. `Exhibit Layers` era rows are now actionable jump controls (not decorative text).
+2. The top-left cluster is simplified by relocating Story Compass to the upper-right on desktop and moving Layers lower.
+3. A new `Space Signal` layer is accepted for C0/C1 bridge scope if it stays subtle and museum-consistent:
+   - live/fallback ISS telemetry card
+   - orbital visual cue on globe
+   - no split-screen or heavy satellite tiles in this sprint
+4. Visual direction is now explicitly: deep-space backdrop + archival/aged texture + restrained Zambia accents.
+5. Globe color grading should avoid purple bias; ocean/earth tones should remain familiar and credible.
+
+This addendum does not change C1->C3 sequence; it refines presentation and narrative clarity in the current build.
+
+## Progress Log — Implementation Snapshot (March 2026)
+
+### Completed
+- Map Layers overlap fix: Layers panel now supersedes SovereigntyStack when expanded.
+- Space C1 bridge delivered:
+  - Live ISS route + fallback (`/api/space/live`)
+  - Curated live catalog (`/api/space/catalog`)
+  - CelesTrak/NORAD TLE ingestion with SGP4 propagation (`/api/space/norad`)
+  - NASA EONET Earth Observation feed (`/api/earth/observation`)
+- UI additions:
+  - SpaceSignal expanded with live counts and source attribution
+  - SpaceMissionBuilder panel scaffold
+  - Nkoloso cinematic overlay + narrative mythology sequence
+  - EarthObservationLayer visual pulse on globe
+
+### In progress / next
+1. SGP4 route optimization (cache + background refresh cadence).
+2. Globe rendering of propagated NORAD sample tracks as selectable objects.
+3. EO image layer integration (Sentinel/Worldview tiles).
+4. Mission builder backend persistence and moderation path.
+
+## Progress Log - Execution Update (March 5, 2026)
+
+### Completed in this execution cycle
+- NORAD caching/refresh hardening:
+  - `/api/space/norad` moved to in-memory stale-while-revalidate cache with guarded refresh.
+- Earth observation feed hardening:
+  - `/api/earth/observation` moved to in-memory stale-while-revalidate cache.
+- Live satellites rendered on globe:
+  - Added `liveSatellites` layer state and toggle.
+  - Added selectable on-globe satellite points sourced from NORAD propagated sample.
+- EO imagery integration:
+  - Added `/api/earth/imagery` (NASA GIBS Worldview WMS for Zambia AOI).
+  - EarthObservationLayer now displays textured EO card on-globe with pulse fallback.
+- Backend moderation path wired:
+  - Added `/api/community/submit` and `/api/space/mission/submit`.
+  - Added Supabase server adapter (`lib/server/supabase.ts`) with local fallback mode when env is absent.
+  - ContributionForm + SpaceMissionBuilder now submit to backend endpoint first, then local fallback.
+- Nkoloso cinematic upgrade:
+  - Beat-synced ambient tone sequence via WebAudio + on-screen audio toggle.
+
+### Validation snapshot
+- TypeScript: pass
+- ESLint: pass
+- Production build: blocked in current environment by `spawn EPERM` (permission/runtime issue)
+
+### Immediate next actions
+1. Add Supabase env and verify inserts in moderation tables.
+2. Build approved-submission read path and display community mission/contribution markers.
+3. Resolve local build EPERM and rerun full validate (`typecheck + lint + build`).

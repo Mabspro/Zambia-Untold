@@ -89,6 +89,19 @@ export const MARKERS: Marker[] = [
     color: "#C8851A",
     accentHex: 0xc8851a,
   },
+  {
+    id: "nkoloso-space-academy",
+    epoch: 1964,
+    epochLabel: "1964",
+    tag: "SPACE SOVEREIGNTY",
+    coordinates: { lat: -15.416, lng: 28.283, alt: 1280 },
+    headline: "Nkoloso Declared Zambia Would Reach Mars.",
+    subhead:
+      "At independence, Edward Mukuka Nkoloso built a space academy in Lusaka and challenged colonial limits on African scientific ambition.",
+    color: "#3FA060",
+    accentHex: 0x3fa060,
+    layer: "core",
+  },
   // Geology & colonial infrastructure (A4 content expansion)
   {
     id: "katanga-substrate",

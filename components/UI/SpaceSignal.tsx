@@ -1,0 +1,206 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
+type SpaceSignalPayload = {
+  generatedAt: string;
+  sourceStatus: "live" | "fallback";
+  iss: {
+    latitude: number;
+    longitude: number;
+    altitudeKm: number;
+    velocityKmh: number;
+    overheadZambia: boolean;
+  };
+  earthMarsDistanceKm: number;
+  satellitesOverZambiaEstimate: number;
+};
+
+type CatalogSatellite = {
+  id: number;
+  name: string;
+  operator: string;
+  latitude: number;
+  longitude: number;
+  altitudeKm: number;
+  velocityKmh: number;
+  visibility: string;
+  overZambiaNow: boolean;
+  nearbyNow: boolean;
+};
+
+type SpaceCatalogPayload = {
+  generatedAt: string;
+  sourceStatus: "live" | "fallback";
+  source: string;
+  satellites: CatalogSatellite[];
+  counts: {
+    tracked: number;
+    nearbyNow: number;
+    overZambiaNow: number;
+  };
+};
+
+type NoradPayload = {
+  generatedAt: string;
+  sourceStatus: "live" | "fallback";
+  source: string;
+  counts: {
+    totalParsed: number;
+    analyzed: number;
+    propagated: number;
+    overZambiaNow: number;
+    nearZambiaNow: number;
+  };
+  sample: Array<{ name: string; latitude: number; longitude: number; altitudeKm: number }>;
+};
+
+type EarthObservationPayload = {
+  generatedAt: string;
+  sourceStatus: "live" | "fallback";
+  source: string;
+  count: number;
+  events: Array<{ id: string; title: string; categories: string[]; latestDate: string }>;
+};
+
+type SpaceSignalProps = {
+  enabled: boolean;
+  earthObservationEnabled: boolean;
+  onOpenMissionBuilder?: () => void;
+};
+
+export function SpaceSignal({ enabled, earthObservationEnabled, onOpenMissionBuilder }: SpaceSignalProps) {
+  const [data, setData] = useState<SpaceSignalPayload | null>(null);
+  const [catalog, setCatalog] = useState<SpaceCatalogPayload | null>(null);
+  const [norad, setNorad] = useState<NoradPayload | null>(null);
+  const [earth, setEarth] = useState<EarthObservationPayload | null>(null);
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        const [liveRes, catalogRes, noradRes, earthRes] = await Promise.all([
+          fetch("/api/space/live", { cache: "no-store" }),
+          fetch("/api/space/catalog", { cache: "no-store" }),
+          fetch("/api/space/norad", { cache: "no-store" }),
+          earthObservationEnabled
+            ? fetch("/api/earth/observation", { cache: "no-store" })
+            : Promise.resolve(new Response(null, { status: 204 })),
+        ]);
+
+        if (liveRes.ok) {
+          const payload = (await liveRes.json()) as SpaceSignalPayload;
+          if (!cancelled) setData(payload);
+        }
+        if (catalogRes.ok) {
+          const payload = (await catalogRes.json()) as SpaceCatalogPayload;
+          if (!cancelled) setCatalog(payload);
+        }
+        if (noradRes.ok) {
+          const payload = (await noradRes.json()) as NoradPayload;
+          if (!cancelled) setNorad(payload);
+        }
+        if (earthRes.status !== 204 && earthRes.ok) {
+          const payload = (await earthRes.json()) as EarthObservationPayload;
+          if (!cancelled) setEarth(payload);
+        }
+      } catch {
+        // Keep prior payload if fetch fails.
+      }
+    };
+
+    load();
+    const id = setInterval(load, 60000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [enabled, earthObservationEnabled]);
+
+  if (!enabled || !data) return null;
+
+  const overNow = catalog?.satellites.filter((s) => s.overZambiaNow).slice(0, 3) ?? [];
+  const earthEvents = earth?.events.slice(0, 3) ?? [];
+
+  return (
+    <aside className="pointer-events-auto absolute right-4 top-[6.5rem] z-20 hidden w-[min(380px,34vw)] rounded border border-copper/30 bg-bg/85 px-3 py-2 backdrop-blur-md md:block">
+      <p className="font-display text-[10px] uppercase tracking-[0.18em] text-copperSoft">Space Signal</p>
+      <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.12em] text-muted/70">
+        ISS {data.iss.overheadZambia ? "Over Zambia" : "Not Over Zambia"}
+      </p>
+      <div className="mt-1.5 grid grid-cols-2 gap-x-2 gap-y-1 text-[10px] text-text/80">
+        <span>Alt: {Math.round(data.iss.altitudeKm)} km</span>
+        <span>Vel: {Math.round(data.iss.velocityKmh)} km/h</span>
+        <span>Mars gap: {Math.round(data.earthMarsDistanceKm).toLocaleString()} km</span>
+        <span>Pass est.: {data.satellitesOverZambiaEstimate}</span>
+      </div>
+
+      <p className="mt-1 text-[8px] uppercase tracking-[0.1em] text-muted/55">Orbital: CelesTrak/NORAD + wheretheiss.at · Compute: CopperCloud</p>
+
+      {norad && (
+        <div className="mt-2 rounded border border-copper/20 bg-panel/55 px-2 py-1.5">
+          <p className="text-[9px] uppercase tracking-[0.14em] text-copper/70">
+            NORAD Parsed: {norad.counts.totalParsed} · Over Zambia Now: {norad.counts.overZambiaNow}
+          </p>
+        </div>
+      )}
+
+      {catalog && (
+        <div className="mt-2 rounded border border-copper/20 bg-panel/55 px-2 py-1.5">
+          <p className="text-[9px] uppercase tracking-[0.14em] text-copper/70">
+            Live Satellites · Over Zambia Now: {catalog.counts.overZambiaNow}
+          </p>
+          {overNow.length > 0 ? (
+            <div className="mt-1 space-y-0.5">
+              {overNow.map((sat) => (
+                <p key={sat.id} className="text-[9px] text-muted/85">
+                  {sat.name} · {Math.round(sat.altitudeKm)} km
+                </p>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-1 text-[9px] text-muted/70">No tracked satellite directly overhead this minute.</p>
+          )}
+        </div>
+      )}
+
+      {earthObservationEnabled && earth && (
+        <div className="mt-2 rounded border border-copper/20 bg-panel/55 px-2 py-1.5">
+          <p className="text-[9px] uppercase tracking-[0.14em] text-copper/70">
+            Earth Observation · Open Events in Zambia Region: {earth.count}
+          </p>
+          {earthEvents.length > 0 ? (
+            <div className="mt-1 space-y-0.5">
+              {earthEvents.map((event) => (
+                <p key={event.id} className="text-[9px] text-muted/85">
+                  {event.title}
+                </p>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-1 text-[9px] text-muted/70">No open remote-sensed events reported now.</p>
+          )}
+        </div>
+      )}
+
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <p className="font-mono text-[8px] uppercase tracking-[0.1em] text-muted/50">
+          {data.sourceStatus === "live" ? "Live feed" : "Fallback model"} · Updated {new Date(data.generatedAt).toLocaleTimeString()}
+        </p>
+        <button
+          type="button"
+          onClick={onOpenMissionBuilder}
+          className="rounded border border-copper/30 px-2 py-1 text-[9px] uppercase tracking-[0.12em] text-copperSoft hover:border-copper"
+        >
+          Build Mission
+        </button>
+      </div>
+    </aside>
+  );
+}
+
+
+

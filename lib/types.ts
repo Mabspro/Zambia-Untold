@@ -1,5 +1,5 @@
 /**
- * lib/types.ts — Shared types used across Globe and UI components.
+ * lib/types.ts - Shared types used across Globe and UI components.
  *
  * Keep this file minimal: only canonical shared types that would otherwise
  * be duplicated. Component-local types stay in their respective files.
@@ -14,4 +14,7 @@ export type LayerVisibility = {
   province: boolean;
   particles: boolean;
   zambezi?: boolean;
+  space?: boolean;
+  earthObservation?: boolean;
+  liveSatellites?: boolean;
 };

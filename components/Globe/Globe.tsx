@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
 import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
-import { OrbitControls, Sparkles, Stars } from "@react-three/drei";
+import { Html, OrbitControls, Sparkles, Stars } from "@react-three/drei";
 import * as THREE from "three";
 import type { OrbitControls as OrbitControlsType } from "three-stdlib";
 import { MARKERS, type Marker } from "@/data/markers";
@@ -23,6 +23,7 @@ import { ZambiaBoundary } from "./ZambiaBoundary";
 import { ProvinceHighlight } from "./ProvinceHighlight";
 import { ZambeziLayer } from "./ZambeziLayer";
 import { KatangaFormationLayer } from "./KatangaFormationLayer";
+import { EarthObservationLayer } from "./EarthObservationLayer";
 import type { LayerVisibility } from "@/lib/types";
 
 type GlobeProps = {
@@ -80,6 +81,101 @@ function CityLights({ xrayMixRef }: CityLightsProps) {
   );
 }
 
+
+type ISSOrbitTrackProps = {
+  enabled: boolean;
+};
+
+function ISSOrbitTrack({ enabled }: ISSOrbitTrackProps) {
+  const dotRef = useRef<THREE.Mesh>(null);
+
+  useFrame(({ clock }) => {
+    if (!dotRef.current || !enabled) return;
+    const t = clock.elapsedTime * 0.22;
+    const radius = 1.18;
+    const x = Math.cos(t) * radius;
+    const z = Math.sin(t) * radius;
+    const y = Math.sin(t * 0.7) * 0.08;
+    dotRef.current.position.set(x, y, z);
+  });
+
+  return (
+    <group
+      visible={enabled}
+      rotation={[
+        THREE.MathUtils.degToRad(51.6),
+        THREE.MathUtils.degToRad(18),
+        0,
+      ]}
+    >
+      <mesh rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[1.18, 0.002, 8, 128]} />
+        <meshBasicMaterial color="#d7dee8" transparent opacity={0.34} />
+      </mesh>
+      <mesh ref={dotRef}>
+        <sphereGeometry args={[0.012, 10, 10]} />
+        <meshBasicMaterial color="#f5f7fa" />
+      </mesh>
+    </group>
+  );
+}
+
+
+type LiveSatelliteSample = {
+  name: string;
+  latitude: number;
+  longitude: number;
+  altitudeKm: number;
+};
+
+type LiveSatelliteLayerProps = {
+  active: boolean;
+  satellites: LiveSatelliteSample[];
+};
+
+function LiveSatelliteLayer({ active, satellites }: LiveSatelliteLayerProps) {
+  const [selected, setSelected] = useState<LiveSatelliteSample | null>(null);
+
+  useEffect(() => {
+    if (!active) setSelected(null);
+  }, [active]);
+
+  if (!active || satellites.length === 0) return null;
+
+  return (
+    <group>
+      {satellites.map((sat) => {
+        const radius = THREE.MathUtils.clamp(1 + sat.altitudeKm / 45000, 1.03, 1.26);
+        const p = latLngToVector3(sat.latitude, sat.longitude, radius);
+        const selectedNow = selected?.name === sat.name;
+        return (
+          <group key={`${sat.name}-${sat.latitude.toFixed(2)}-${sat.longitude.toFixed(2)}`} position={[p.x, p.y, p.z]}>
+            <mesh
+              onClick={(event) => {
+                event.stopPropagation();
+                setSelected(sat);
+              }}
+            >
+              <sphereGeometry args={[selectedNow ? 0.014 : 0.01, 10, 10]} />
+              <meshBasicMaterial
+                color={selectedNow ? "#f8e8ca" : "#d6dde8"}
+                transparent
+                opacity={selectedNow ? 0.95 : 0.76}
+              />
+            </mesh>
+            {selectedNow && (
+              <Html center distanceFactor={8}>
+                <div className="rounded border border-copper/30 bg-panel/90 px-2 py-1 text-[9px] uppercase tracking-[0.12em] text-copperSoft whitespace-nowrap">
+                  {sat.name} · {Math.round(sat.altitudeKm)} km
+                </div>
+              </Html>
+            )}
+          </group>
+        );
+      })}
+    </group>
+  );
+}
 const XRAY_VERTEX = `
   varying vec3 vWorldPosition;
   varying vec3 vWorldNormal;
@@ -122,6 +218,9 @@ const DEFAULT_LAYERS: LayerVisibility = {
   province: true,
   particles: true,
   zambezi: true,
+  space: true,
+  earthObservation: true,
+  liveSatellites: true,
 };
 
 const ATMOSPHERE_NEAR = 1.3;
@@ -161,6 +260,8 @@ function Scene({
   );
   const africaCameraRef = useRef(africaCenteredCameraPosition(3.2));
   const snapActiveRef = useRef(false);
+  const [liveSatellites, setLiveSatellites] = useState<LiveSatelliteSample[]>([]);
+
 
   const xrayEnabled = scrubYear < -10000;
 
@@ -263,6 +364,37 @@ function Scene({
     };
   }, [xrayEnabled]);
 
+  useEffect(() => {
+    if (layerVisibility.liveSatellites === false || layerVisibility.space === false) {
+      setLiveSatellites([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        const res = await fetch("/api/space/norad", { cache: "no-store" });
+        if (!res.ok) return;
+        const payload = (await res.json()) as {
+          sample?: LiveSatelliteSample[];
+        };
+        if (cancelled) return;
+        const sample = Array.isArray(payload.sample) ? payload.sample.slice(0, 36) : [];
+        setLiveSatellites(sample);
+      } catch {
+        // Keep prior sample while offline or during transient failures.
+      }
+    };
+
+    load();
+    const intervalId = setInterval(load, 60_000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
+  }, [layerVisibility.liveSatellites, layerVisibility.space]);
   useFrame((state, delta) => {
     const { camera } = state;
     const now = state.clock.elapsedTime;
@@ -400,17 +532,18 @@ function Scene({
         {layerVisibility.province !== false && (
           <ProvinceHighlight activeMarkerId={selectedMarker?.id ?? null} />
         )}
+        <EarthObservationLayer active={layerVisibility.earthObservation !== false} />
         <mesh>
           <sphereGeometry args={[1, 64, 64]} />
           <meshStandardMaterial
             ref={baseMaterialRef}
             map={earthTexture}
             emissiveMap={earthTexture}
-            color="#ffffff"
-            emissive="#ffffff"
-            roughness={0.9}
+            color="#c7d6de"
+            emissive="#8ba8be"
+            roughness={0.88}
             metalness={0.06}
-            emissiveIntensity={1.05}
+            emissiveIntensity={0.78}
             transparent
             opacity={1}
           />
@@ -434,12 +567,17 @@ function Scene({
           <sphereGeometry args={[1.03, 48, 48]} />
           <meshBasicMaterial
             ref={atmosphereRef}
-            color="#050d18"
+            color="#081525"
             transparent
             opacity={0.07}
           />
         </mesh>
         <CityLights xrayMixRef={xrayMixRef} />
+        <ISSOrbitTrack enabled={layerVisibility.space !== false} />
+        <LiveSatelliteLayer
+          active={layerVisibility.space !== false && layerVisibility.liveSatellites !== false}
+          satellites={liveSatellites}
+        />
         {layerVisibility.particles !== false && (
           <LusakaParticleSwarm active={selectedMarker?.id === "lusaka-independence"} />
         )}
@@ -538,3 +676,14 @@ export function Globe({
     </Canvas>
   );
 }
+
+
+
+
+
+
+
+
+
+
+

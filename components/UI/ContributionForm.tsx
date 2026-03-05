@@ -97,10 +97,13 @@ export function ContributionForm({ onClose }: ContributionFormProps) {
   const [form, setForm] = useState<ContributionFormData>(INITIAL_FORM);
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const update = <K extends keyof ContributionFormData>(key: K, value: ContributionFormData[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
     setErrors([]);
+    setSubmitError(null);
   };
 
   const validate = (): string[] => {
@@ -115,27 +118,58 @@ export function ContributionForm({ onClose }: ContributionFormProps) {
     return errs;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const validationErrors = validate();
     if (validationErrors.length > 0) {
       setErrors(validationErrors);
+      setSubmitError(null);
       return;
     }
 
-    // Save to localStorage (Phase C will connect to Supabase)
+    setSubmitting(true);
+
+    let storageMode: "supabase" | "local-fallback" = "local-fallback";
+
     try {
-      const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]") as unknown[];
-      existing.push({
-        ...form,
-        id: `community-${Date.now()}`,
-        status: "pending",
-        submittedAt: new Date().toISOString(),
+      const remote = await fetch("/api/community/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
       });
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
+
+      if (remote.ok) {
+        const payload = (await remote.json()) as { storage?: "supabase" | "local-fallback" };
+        if (payload.storage === "supabase") {
+          storageMode = "supabase";
+        }
+      }
     } catch {
-      // Silently fail on localStorage errors
+      storageMode = "local-fallback";
     }
 
+    if (storageMode === "local-fallback") {
+      let savedLocally = false;
+      try {
+        const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]") as unknown[];
+        existing.push({
+          ...form,
+          id: `community-${Date.now()}`,
+          status: "pending",
+          submittedAt: new Date().toISOString(),
+        });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
+        savedLocally = true;
+      } catch {
+        setSubmitError("Could not save this submission on your device. Please retry.");
+      }
+
+      if (!savedLocally) {
+        setSubmitting(false);
+        return;
+      }
+    }
+
+    setSubmitting(false);
     setSubmitted(true);
   };
 
@@ -203,8 +237,8 @@ export function ContributionForm({ onClose }: ContributionFormProps) {
               </div>
               <h3 className="font-display text-xl text-text mb-2">Thank You</h3>
               <p className="text-[13px] text-[#B8A58F] leading-relaxed max-w-[360px]">
-                Your contribution will be reviewed within 7 days. Once approved, it will appear on
-                the globe as a community pin.
+                Your contribution has been saved on this device for the Isibalo pilot. Moderated
+                publishing to the shared archive starts in the next backend phase.
               </p>
               <button
                 type="button"
@@ -356,6 +390,13 @@ export function ContributionForm({ onClose }: ContributionFormProps) {
                 </label>
               </div>
 
+              {/* Submission storage error */}
+              {submitError && (
+                <div className="rounded border border-[#ad3f31]/40 bg-[#2c110f]/80 px-3 py-2">
+                  <p className="text-[11px] text-[#efb5ad]">{submitError}</p>
+                </div>
+              )}
+
               {/* Errors */}
               {errors.length > 0 && (
                 <div className="rounded border border-[#ad3f31]/40 bg-[#2c110f]/80 px-3 py-2">
@@ -370,10 +411,11 @@ export function ContributionForm({ onClose }: ContributionFormProps) {
               {/* Submit */}
               <button
                 type="button"
-                onClick={handleSubmit}
-                className="w-full rounded border border-copper/50 bg-copper/15 px-4 py-3 text-[11px] uppercase tracking-[0.2em] text-copper hover:bg-copper/25 transition-colors font-display"
+                onClick={() => void handleSubmit()}
+                disabled={submitting}
+                className="w-full rounded border border-copper/50 bg-copper/15 px-4 py-3 text-[11px] uppercase tracking-[0.2em] text-copper hover:bg-copper/25 transition-colors font-display disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Submit for Review
+                {submitting ? "Submitting..." : "Submit for Review"}
               </button>
 
               <p className="text-[9px] text-muted/60 text-center">
@@ -386,3 +428,7 @@ export function ContributionForm({ onClose }: ContributionFormProps) {
     </motion.aside>
   );
 }
+
+
+
+

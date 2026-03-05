@@ -23,6 +23,13 @@ type NarrativePanelProps = {
 
 type TabId = "story" | "mythology" | "evidence";
 
+const NKOLOSO_BEATS = [
+  { year: "1964", label: "Lusaka", text: "Nkoloso establishes a Zambian space academy at independence." },
+  { year: "1964", label: "Training", text: "Afonauts train with improvised zero-gravity drills." },
+  { year: "1964", label: "UNESCO Letter", text: "Funding request sent. Rejected. Global press mocks the effort." },
+  { year: "2026", label: "Open Question", text: "What if sovereign infrastructure had existed for that ambition?" },
+];
+
 function NarrativeBlocks({ blocks }: { blocks: NarrativeBlock[] }) {
   return (
     <div className="space-y-4">
@@ -125,6 +132,43 @@ function EvidenceList({ sources }: { sources: NarrativeSource[] }) {
           </div>
         </article>
       ))}
+    </div>
+  );
+}
+
+function NkolosoMythology() {
+  return (
+    <div className="space-y-3">
+      <p className="mb-1 text-[11px] uppercase tracking-[0.18em] text-copperSoft">
+        Inganji · Nkoloso Sequence
+      </p>
+      <p className="text-[12px] leading-relaxed text-[#B8A58F]">
+        The world read this as a joke. Zambia reads it as a thesis: scientific ambition without infrastructure gets dismissed.
+      </p>
+      <div className="space-y-2">
+        {NKOLOSO_BEATS.map((beat, index) => (
+          <motion.article
+            key={beat.year + beat.label}
+            initial={{ opacity: 0, x: -8 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.08 * index, duration: 0.3 }}
+            className="rounded border border-copper/20 bg-copper/5 px-3 py-2"
+          >
+            <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-copper/80">
+              {beat.year} · {beat.label}
+            </p>
+            <p className="mt-1 text-[12px] text-[#D8C9B4]">{beat.text}</p>
+          </motion.article>
+        ))}
+      </div>
+      <div className="rounded border border-copper/35 bg-bg/65 px-3 py-2.5">
+        <p className="text-[11px] uppercase tracking-[0.14em] text-copperSoft">
+          Nkoloso&apos;s academy had no infrastructure.
+        </p>
+        <p className="mt-1 text-[11px] text-muted">
+          Zambia Untold runs on Zambia&apos;s own.
+        </p>
+      </div>
     </div>
   );
 }
@@ -310,19 +354,25 @@ export function NarrativePanel({
                         exit={{ opacity: 0 }}
                         className="text-sm"
                       >
-                        <p className="mb-3 text-[11px] uppercase tracking-[0.18em] text-copperSoft">
-                          Inganji · Folk Tales & Mythology
-                        </p>
-                        <div className="rounded border border-copper/20 bg-copper/5 px-3 py-4 text-center">
-                          <p className="text-[13px] text-[#B8A58F] leading-relaxed">
-                            Folk tale connections for this site are being prepared.
-                          </p>
-                          <p className="mt-2 text-[11px] text-muted">
-                            Visit{" "}
-                            <span className="text-copperSoft">🔥 Inganji</span>{" "}
-                            in the action bar to explore oral traditions.
-                          </p>
-                        </div>
+                        {marker?.id === "nkoloso-space-academy" ? (
+                          <NkolosoMythology />
+                        ) : (
+                          <>
+                            <p className="mb-3 text-[11px] uppercase tracking-[0.18em] text-copperSoft">
+                              Inganji · Folk Tales & Mythology
+                            </p>
+                            <div className="rounded border border-copper/20 bg-copper/5 px-3 py-4 text-center">
+                              <p className="text-[13px] text-[#B8A58F] leading-relaxed">
+                                Folk tale connections for this site are being prepared.
+                              </p>
+                              <p className="mt-2 text-[11px] text-muted">
+                                Visit{" "}
+                                <span className="text-copperSoft">🔥 Inganji</span>{" "}
+                                in the action bar to explore oral traditions.
+                              </p>
+                            </div>
+                          </>
+                        )}
                       </motion.div>
                     )}
                     {activeTab === "evidence" && (

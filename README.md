@@ -131,3 +131,64 @@ Creative Commons Attribution — community contributions displayed under CC-BY.
 ---
 
 *Zambia Untold · Isibalo · The Living Archive*
+
+## Progress Update (March 2026)
+
+### Delivered in current implementation window
+- UI/UX hardening from C0: panel mutual exclusion, Story Compass tuning, fly-to confirmation pin, cleaner top-left hierarchy.
+- Layering fix: expanded `Map Layers` now sits above the Sovereignty stack and suppresses overlap.
+- Space layer build-out: `Space Signal` panel, mission builder panel, Nkoloso marker integration, Nkoloso mythology sequence.
+- Live data routes:
+  - `/api/space/live` (ISS + fallback)
+  - `/api/space/catalog` (curated live satellites with Zambia/near-Zambia filtering)
+  - `/api/space/norad` (CelesTrak TLE ingestion + SGP4 propagation via `satellite.js`)
+  - `/api/earth/observation` (NASA EONET events for Zambia region)
+- Globe additions: ISS orbit cue, Earth Observation pulse layer.
+- Visual direction: aged-archive treatment + subtle Zambia accents + reduced purple bias in globe grading.
+
+### Current status summary
+- Type safety: `npm run typecheck` passes.
+- Lint: `npm run lint` passes.
+- Space strategy: operational C1 foundation is live in-app.
+
+## Next Steps (Execution Queue)
+1. Upgrade NORAD route from sampled propagation to cached full-batch propagation + worker queue.
+2. Add explicit satellite object rendering from propagated NORAD sample on globe (not only panel counts).
+3. Add EO imagery tile integration (Sentinel/Worldview) behind `Earth Observation` toggle.
+4. Expand Nkoloso cinematic from beat overlay to full scene sequence with synchronized audio layer.
+5. Connect mission proposals to backend (Supabase) and render accepted proposals as community space tracks.
+6. Run cross-device QA (375px mobile, low-bandwidth profile, keyboard/a11y pass).
+
+## Progress Update (March 2026 - Sprint C0/C1 Execution Pass)
+
+### Completed in this pass
+- Added server-side stale-while-revalidate caching infrastructure for live feeds:
+  - `/api/space/norad` now uses in-memory SWR caching + concurrency guard.
+  - `/api/earth/observation` now uses in-memory SWR caching + concurrency guard.
+- Added Earth imagery integration route:
+  - `/api/earth/imagery` now emits NASA GIBS Worldview map URL/date for Zambia AOI.
+- Added live satellite rendering on globe:
+  - New `Live satellites` layer toggle.
+  - On-globe selectable satellite objects rendered from NORAD propagated sample.
+- Upgraded Earth Observation layer:
+  - Pulls imagery URL from `/api/earth/imagery` and renders a subtle textured overlay on Zambia.
+  - Keeps existing pulse rings as low-bandwidth fallback visual.
+- Connected submissions to backend moderation path with fallback:
+  - `ContributionForm` posts to `/api/community/submit`.
+  - `SpaceMissionBuilder` posts to `/api/space/mission/submit`.
+  - New server adapters write to Supabase when server env is configured; otherwise local fallback remains active.
+- Upgraded Nkoloso cinematic:
+  - Added synchronized tonal audio sequence using WebAudio API.
+  - Added user audio control (`Tone On/Off`) and device support fallback.
+
+### Validation
+- `npm run typecheck` passes.
+- `npm run lint` passes.
+- `npm run build` failed in this environment with webpack `spawn EPERM` (permission issue), not TS/ESLint errors.
+
+## Next Steps (Updated)
+1. Configure Supabase server env (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`) and verify writes into `isibalo_submissions` and `space_mission_proposals`.
+2. Add Supabase read APIs for approved contributions/missions and render them as globe community tracks.
+3. Optimize satellite rendering with clustering at zoomed-out distances to reduce visual noise.
+4. Add mobile QA pass for the new live satellites and cinematic audio controls.
+5. Resolve build-environment EPERM (likely local permission/process lock) and rerun `npm run validate`.
