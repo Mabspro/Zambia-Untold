@@ -1,232 +1,133 @@
-# ZAMBIA UNTOLD
+# 🇿🇲 ZAMBIA UNTOLD
 
-**The Atlas Museum** — A sovereign virtual museum for Zambia's deep history. The globe is the museum floor, time is the gallery wing, and every epoch is an exhibition hall. Navigate 4.5 billion years of geological and human history by dragging the Deep Time scrubber.
+**The history you were never taught.**
 
-*The history you were never taught.*
+An interactive 3D globe experience cataloguing Zambia's deep history — from 900 million years of geological formation through kingdoms, colonialism, and sovereignty. A living archive where community stories, folk tales, and historical events are mapped onto the planet.
 
----
-
-## Quick Start
-
-| Step | Command |
-|------|---------|
-| **Requirements** | Node.js 18+ |
-| **Install** | `npm install` |
-| **Run dev** | `npm run dev` |
-| **Build** | `npm run build` |
+> *"Before there were nations, there was a substrate."*
 
 ---
 
-## Tech Stack
+## ✨ Features
 
-### Core
+### 🌍 Interactive Globe
+- **Three.js / React Three Fiber** powered 3D Earth with crisp satellite textures
+- **Responsive FOV** — globe sizes correctly on mobile, tablet, and desktop
+- **CameraRig** with smooth fly-to animations when selecting markers
+- **Auto-rotate** with Africa-centered idle snap
+- **Data overlays**: Zambia boundary, province highlights, Zambezi river evolution, Katanga formation
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| **Next.js** | 14.x | App Router, React Server Components, static export |
-| **React** | 18.x | UI framework |
-| **TypeScript** | 5.x | Type safety |
-| **React Three Fiber** | 8.x | React renderer for Three.js |
-| **Three.js** | 0.179.x | WebGL globe, shaders, geometry |
-| **Drei** | 9.x | R3F helpers (Html, OrbitControls, etc.) |
+### 📅 Historical Calendar (Zambia's Living Calendar)
+- **41 events** across all 12 months — ceremonies, independence milestones, geological discoveries
+- **Category filtering**: ceremonies, politics, archaeology, nature, culture, geology
+- **"On This Day"** feature highlights nearby events
+- **Places to Visit** — each event links to a physical location with globe navigation
+- **Global Context** — situates each event in world history
 
-### UI & Styling
+### 🔥 Inganji (Folk Tales & Mythology)
+- **9 flagship folk tales**: Nyami Nyami, Kuomboka, Chitimukulu, Makishi, Gule Wamkulu, and more
+- **Tradition filtering** by ethnic group (Tonga, Lozi, Bemba, Lunda, Chewa, Lamba)
+- **Tier system**: Flagship, Regional, Urban & Living
+- **Cultural review** badges for validated content
 
-| Technology | Purpose |
-|------------|---------|
-| **Tailwind CSS** | Utility-first styling, theme tokens |
-| **Framer Motion** | Lobby transitions, panel animations, AnimatePresence |
-| **PostCSS** | Tailwind processing |
-| **Autoprefixer** | CSS vendor prefixes |
+### 📍 Village Search ("See Your Village From Space")
+- **Nominatim geocoding** — search any town, village, river, or landmark in Zambia
+- **Fly-to navigation** — globe camera flies to selected location
+- **Curated suggestions**: Lusaka, Livingstone, Kabwe, Kasama, Solwezi, Mongu, and more
+- **Debounced search** with loading states and province display
 
-### Capabilities
+### ✦ Isibalo (Community Contributions)
+- **Submit memories**, oral traditions, family histories, folk tales, photographs
+- **Epoch tagging** — place your story in deep time (476K BC → Present)
+- **Location tagging** with place names
+- **Creative Commons Attribution** consent
+- **localStorage persistence** (Supabase integration planned)
 
-| Technology | Purpose |
-|------------|---------|
-| **next-pwa** | PWA support, offline caching, service worker |
-| **html2canvas** | Export Brief PNG capture |
-| **cross-env** | Cross-platform env vars (`build:no-pwa`) |
+### 🪨 Deep Time Panel
+- **9 geological epochs** from Pre-Geological through Unfinished Sovereign
+- **Retractible/minimizable** — collapse to a slim pill, expand back to full panel
+- **Global context** + **Zambia context** for each epoch
+- **"So What"** sections connecting geology to modern Zambia
+- **Formations, paleolatitude, and modern consequences** for each era
 
-### Data & Assets
-
-| Format | Location | Purpose |
-|--------|----------|---------|
-| **GeoJSON** | `public/data/` | Zambia boundary, provinces, Lusaka roads |
-| **Static JSON** | `data/*.ts` | Markers, narratives, contextual cards, Zambezi path |
-| **Textures** | `public/textures/` | Earth night map, etc. |
+### 🏛️ Museum Passport
+- **Progress tracking** — visited zones, markers, galleries
+- **Return visitor awareness** — remembers your last era on reload
+- **Clean landing** — no clutter on refresh, just the globe
 
 ---
 
-## Project Structure
+## 🛠️ Tech Stack
 
-```
-zambia-untold/
-├── app/
-│   ├── layout.tsx          # Root layout, metadata, globals
-│   ├── page.tsx            # Home: lobby flow, scrubber, passport, layers
-│   ├── globals.css         # Tailwind, CSS vars, keyframes
-│   └── error.tsx            # Error boundary
-├── components/
-│   ├── Globe/              # R3F scene
-│   │   ├── Globe.tsx       # Main scene: earth, atmosphere, layers
-│   │   ├── GlobeMarker.tsx # Marker spheres
-│   │   ├── ZambiaBoundary.tsx
-│   │   ├── ZambeziLayer.tsx
-│   │   ├── KatangaFormationLayer.tsx
-│   │   ├── LusakaParticleSwarm.tsx
-│   │   ├── ProvinceHighlight.tsx
-│   │   ├── SovereigntyStackHUD.tsx
-│   │   └── CameraRig.tsx
-│   ├── Layout/
-│   │   └── CanvasWrapper.tsx
-│   └── UI/
-│       ├── NarrativePanel.tsx   # Story/Evidence tabs, contextual cards
-│       ├── TimeScrubber.tsx     # Deep Time axis
-│       ├── LayersPanel.tsx
-│       ├── PreloadScreen.tsx
-│       ├── ExportBriefButton.tsx
-│       ├── DataIssueBanner.tsx
-│       ├── ChevronDivider.tsx
-│       └── EpochLabel.tsx
-├── data/
-│   ├── markers.ts          # 9 exhibit markers (core + geological)
-│   ├── narratives.ts      # Narrative + NarrativeSource schema
-│   ├── contextualEpochCards.ts
-│   └── zambeziPath.ts
-├── lib/
-│   ├── deepTime.ts        # 8-zone axis, year↔position mapping
-│   ├── epochPalette.ts    # Globe tint by epoch
-│   ├── epoch.ts           # isMarkerActive (legacy exports deprecated)
-│   ├── camera.ts          # Lat/lng, quadratic arc
-│   ├── geo.ts             # GeoJSON → Vector3, MARKER_TO_PROVINCE
-│   ├── lttb.ts            # Downsampling for large point sets
-│   ├── museumPassport.ts  # localStorage visitor progress
-│   ├── sovereignty.ts     # Governance/Value/Infrastructure state
-│   ├── dataIssues.ts      # Event bus for fetch failures
-│   └── types.ts
-├── public/
-│   ├── data/              # GeoJSON (boundary, provinces, roads)
-│   └── textures/         # Earth map
-├── docs/                  # Specs, plans, context
-└── TECH_AUDIT_MATRIX.md   # File-by-file audit, tech debt
+| Layer | Technology |
+|-------|-----------|
+| Framework | Next.js 14 (App Router) |
+| 3D Engine | Three.js + React Three Fiber |
+| Animation | Framer Motion |
+| Styling | Tailwind CSS (custom copper/ochre palette) |
+| State | React hooks + localStorage passport |
+| Geocoding | Nominatim (OpenStreetMap) |
+| Fonts | Display, body, mono, citation system |
+
+---
+
+## 🚀 Getting Started
+
+```bash
+# Clone
+git clone https://github.com/Mabspro/Zambia-Untold.git
+cd Zambia-Untold
+
+# Install dependencies
+npm install
+
+# Run development server
+npm run dev
+
+# Open
+http://localhost:3000
 ```
 
 ---
 
-## Commands
+## 📊 Content Inventory
 
-| Command | Purpose |
-|---------|---------|
-| `npm install` | Install dependencies |
-| `npm run dev` | Start dev server |
-| `npm run build` | Production build (with PWA) |
-| `npm run build:no-pwa` | Build without PWA (restricted envs) |
-| `npm run start` | Start production server |
-| `npm run lint` | ESLint |
-| `npm run typecheck` | `tsc --noEmit` |
-| `npm run validate` | typecheck + lint + build |
+| Content Type | Count | Coverage |
+|-------------|-------|---------|
+| Calendar Events | 41 | All 12 months |
+| Folk Tales | 9 | 6 ethnic traditions |
+| Globe Markers | 9 | Deep Time → Sovereign |
+| Deep Time Vignettes | 9 | Pre-Geological → Present |
+| Narrative Entries | 9 | Per-marker detail panels |
 
 ---
 
-## Deployment
+## 🗺️ Roadmap (Sprint B1)
 
-**Current model:** Next.js server deployment. `npm run build` produces an optimized build; `npm run start` serves it. Suitable for Vercel, Railway, or any Node.js host.
+See [`ZAMBIA_UNTOLD_SPRINT_B1_INTEGRATION_BRIEF.md`](./ZAMBIA_UNTOLD_SPRINT_B1_INTEGRATION_BRIEF.md) for the full integration plan:
 
-**Static export (recommended for museums):** Add `output: 'export'` to `next.config.mjs` for a fully static site. Deploy the `out/` folder to any static host (Netlify, GitHub Pages, S3). No server required; ideal for offline PWA demos and institutional environments.
-
----
-
-## Core Data Schemas
-
-```ts
-// data/markers.ts
-type Marker = {
-  id: string;
-  epoch: number;           // Year (negative = BC)
-  epochLabel: string;
-  tag: string;
-  coordinates: { lat: number; lng: number; alt: number };
-  headline: string;
-  subhead: string;
-  color: string;
-  accentHex: number;
-};
-
-// data/narratives.ts
-type Narrative = {
-  body: string;
-  blocks?: NarrativeBlock[];
-  cta: string;
-  heroImage?: string;
-  sources?: NarrativeSource[];
-};
-
-type NarrativeSource = {
-  url: string;
-  year?: number;
-  confidence?: "high" | "medium" | "disputed";
-  type?: "academic" | "archival" | "oral" | "media";
-  label?: string;
-  region?: "Zambia" | "Southern Africa" | "Pan-African" | "Global";
-};
-```
+- **Google Photorealistic 3D Tiles** — Museum ↔ Live Earth toggle
+- **Digital Earth Africa** satellite layers (Sentinel-2, water, NDVI)
+- **NGDR geospatial overlays** (chiefdom boundaries, national parks)
+- **Seasonal real-time events** (Kuomboka floods, fire season, rainy greening)
+- **NASA FIRMS** fire hotspot integration
 
 ---
 
-## Data Sources
+## 🧭 Philosophy
 
-| Asset | Source | Notes |
-|-------|--------|-------|
-| `zambia-boundary.geojson` | GeoJSON export | Country outline |
-| `zambia-provinces.geojson` | GeoJSON export | Province polygons |
-| `lusaka-roads.geojson` | GeoJSON export | Cha-cha-cha particle paths |
-| `earth-night.jpg` | NASA Blue Marble / similar | Globe texture |
-| Markers, narratives | Build-time | `data/markers.ts`, `data/narratives.ts` |
-| Contextual cards | Build-time | `data/contextualEpochCards.ts` |
+> *"Global tools, Zambian vantage point, Zambian data partnerships."*
+
+Every integration passes the sovereignty test: *Does this make a Zambian child see their country as a place with depth, texture, and living systems?*
+
+The data is global. The vantage point is Zambian. The stories are sovereign.
 
 ---
 
-## Current Status
+## 📄 License
 
-| Sprint | Status |
-|--------|--------|
-| A1 (Deep Time) | ✅ Complete |
-| A2 (Globe + Mineral) | ✅ Complete |
-| A3 (Exhibit cards, Passport, Closing) | ✅ Complete |
-| A4 (Content, Docs, Curatorial) | 🔄 In progress |
-| Phase B (Audio) | ⏳ Queued |
-| Phase D (Split-screen) | ⏳ Queued |
-| Phase C (Living Archive / Isibalo) | ⏳ Queued |
-| Phase C2 (Folk Tales / Inganji) | ⏳ Future |
-
-**Implemented:** Lobby sequence, Deep Time scrubber (4.5B BC → 2026 AD), contextual epoch cards, boundary scanline, Zambezi layer, Katanga formation, epoch palette, Museum Passport, Evidence tab, Export Brief, PWA, 9 markers (core + geological), Layers as curatorial modes, marker taxonomy.
+Creative Commons Attribution — community contributions displayed under CC-BY.
 
 ---
 
-## Key Docs
-
-| Doc | Purpose |
-|-----|---------|
-| `docs/MUSEUM_ENHANCEMENT_PLAN.md` | Governing spec |
-| `docs/MUSEUM_SPRINT_PLAN.md` | Sprint mapping |
-| `docs/Tech-And-Experience-Recommendation.md` | Architectural strengths, visual/content recommendations, Phase A–C readiness |
-| `docs/Community-Context.md` | Community & folk-tale strategy (Isibalo, Inganji) |
-| `docs/ZAMBIA UNTOLD — Content Architecture  Community Layer, Folklore (Inganji), and Living Archive (Isibalo).md` | Full research: Inganji catalog, Isibalo Supabase schema, production pipeline |
-| `docs/LIVING_ARCHIVE_SPEC.md` | Community contribution layer — implementation (Phase C) |
-| `docs/INGANJI_SPEC.md` | Folk tales & mythology layer — implementation (Phase C2) |
-| `docs/Mineral_Context.md` | Geological research |
-| `TECH_AUDIT_MATRIX.md` | Technical audit, debt tracker |
-
-**Four knowledge layers:** Historical record · Community archive (Isibalo) · Folk tales (Inganji) · Geological substrate. See `docs/Community-Context.md`.
-
-**Contributing:** See [CONTRIBUTING.md](CONTRIBUTING.md) for how to add a new exhibit.
-
----
-
-## Development Notes
-
-- **No Cesium.** Globe is custom R3F + Three.js sphere.
-- **Offline typography.** System font stacks (Book Antiqua, Garamond, Courier New) — no Google Fonts.
-- **PWA:** Disabled in dev. Use `DISABLE_PWA=1` or `npm run build:no-pwa` in restricted build environments.
-- **Globe:** Loaded with `next/dynamic` and `ssr: false` to avoid hydration mismatch.
-- **Epoch overlay:** Globe tint by scrubber year is off by default for better contrast. Set `NEXT_PUBLIC_EPOCH_OVERLAY=1` to re-enable.
+*Zambia Untold · Isibalo · The Living Archive*

@@ -13,6 +13,7 @@ import { HistoricalCalendar } from "@/components/UI/HistoricalCalendar";
 import { FolkTalesPanel } from "@/components/UI/FolkTalesPanel";
 import { ContributionForm } from "@/components/UI/ContributionForm";
 import { DeepTimePanel } from "@/components/UI/DeepTimePanel";
+import { VillageSearch } from "@/components/UI/VillageSearch";
 import { MARKERS } from "@/data/markers";
 import { DEEP_TIME_MAX, formatZoneForDisplay, getZoneForYear, type DeepTimeZone } from "@/lib/deepTime";
 import { loadMuseumPassport, saveMuseumPassport } from "@/lib/museumPassport";
@@ -40,7 +41,7 @@ const REENTRY_PROMPT_KEY = "zambia-untold:reentry-prompt-shown";
 const TOTAL_GALLERIES = 8;
 
 type LobbyPhase = "preload" | "globe" | "thesis" | "ui" | "pulse" | "done";
-type ActivePanel = null | "calendar" | "folkTales" | "contribute" | "deepTime";
+type ActivePanel = null | "calendar" | "folkTales" | "contribute" | "deepTime" | "villageSearch";
 
 export default function HomePage() {
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
@@ -365,6 +366,25 @@ export default function HomePage() {
             </span>
           </div>
 
+          {/* Village Search */}
+          <div className="group relative">
+            <button
+              type="button"
+              onClick={() => setActivePanel(activePanel === "villageSearch" ? null : "villageSearch")}
+              className={`flex items-center gap-1 rounded px-2 py-1.5 text-[10px] uppercase tracking-[0.12em] transition-all duration-200 md:gap-1.5 md:px-3 md:py-2 md:text-[11px] md:tracking-[0.14em] ${
+                activePanel === "villageSearch"
+                  ? "bg-copper/20 text-copper border border-copper/40 shadow-[0_0_8px_rgba(184,115,51,0.2)]"
+                  : "text-copperSoft hover:text-copper hover:bg-copper/8 border border-transparent hover:border-copper/25 hover:shadow-[0_0_6px_rgba(184,115,51,0.15)]"
+              }`}
+            >
+              <span className="text-sm">📍</span>
+              <span className="hidden sm:inline">Search</span>
+            </button>
+            <span className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 rounded bg-panel/95 border border-copper/20 px-2 py-0.5 text-[9px] text-muted opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+              Find your village
+            </span>
+          </div>
+
           {/* Isibalo */}
           <div className="group relative">
             <button
@@ -439,6 +459,13 @@ export default function HomePage() {
             key="folkTales"
             onClose={() => setActivePanel(null)}
             onNavigateToCoordinate={handleNavigateToCoordinate}
+          />
+        )}
+        {activePanel === "villageSearch" && (
+          <VillageSearch
+            key="villageSearch"
+            onNavigate={(lat, lng) => handleNavigateToCoordinate(lat, lng)}
+            onClose={() => setActivePanel(null)}
           />
         )}
         {activePanel === "contribute" && (
