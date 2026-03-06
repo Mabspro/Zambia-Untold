@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 
 const ISS_URL = "https://api.wheretheiss.at/v1/satellites/25544";
 const AU_KM = 149_597_870.7;
+const CACHE_KEY = "live";
+const TTL_MS = 30_000;
 
 type IssResponse = {
   latitude?: number;
@@ -9,6 +11,23 @@ type IssResponse = {
   altitude?: number;
   velocity?: number;
 };
+
+type SpaceLivePayload = {
+  generatedAt: string;
+  sourceStatus: "live" | "fallback";
+  iss: {
+    latitude: number;
+    longitude: number;
+    altitudeKm: number;
+    velocityKmh: number;
+    overheadZambia: boolean;
+  };
+  earthMarsDistanceKm: number;
+  satellitesOverZambiaEstimate: number;
+};
+
+const cache = new Map<string, { data: SpaceLivePayload; timestamp: number }>();
+let inFlight: Promise<SpaceLivePayload> | null = null;
 
 function normalizeLongitude(lng: number): number {
   if (lng > 180) return lng - 360;
@@ -38,11 +57,11 @@ function estimateEarthMarsDistanceKm(now: Date): number {
   return Math.sqrt(dx * dx + dy * dy) * AU_KM;
 }
 
-function fallbackPayload(now: Date) {
+function fallbackPayload(now: Date): SpaceLivePayload {
   const earthMarsDistanceKm = estimateEarthMarsDistanceKm(now);
   return {
     generatedAt: now.toISOString(),
-    sourceStatus: "fallback" as const,
+    sourceStatus: "fallback",
     iss: {
       latitude: -12.7,
       longitude: 28.2,
@@ -55,10 +74,8 @@ function fallbackPayload(now: Date) {
   };
 }
 
-export async function GET() {
-  const now = new Date();
+async function fetchLivePayload(now: Date): Promise<SpaceLivePayload> {
   const fallback = fallbackPayload(now);
-
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 4500);
 
@@ -68,11 +85,7 @@ export async function GET() {
       cache: "no-store",
     });
 
-    if (!res.ok) {
-      return NextResponse.json(fallback, {
-        headers: { "Cache-Control": "no-store" },
-      });
-    }
+    if (!res.ok) return fallback;
 
     const iss = (await res.json()) as IssResponse;
     const latitude = Number(iss.latitude);
@@ -86,34 +99,65 @@ export async function GET() {
       !Number.isFinite(altitudeKm) ||
       !Number.isFinite(velocityKmh)
     ) {
-      return NextResponse.json(fallback, {
-        headers: { "Cache-Control": "no-store" },
-      });
+      return fallback;
     }
 
     const overhead = isOverZambia(latitude, longitude);
 
-    return NextResponse.json(
-      {
-        generatedAt: now.toISOString(),
-        sourceStatus: "live" as const,
-        iss: {
-          latitude,
-          longitude: normalizeLongitude(longitude),
-          altitudeKm,
-          velocityKmh,
-          overheadZambia: overhead,
-        },
-        earthMarsDistanceKm: estimateEarthMarsDistanceKm(now),
-        satellitesOverZambiaEstimate: overhead ? 6 : 4,
+    return {
+      generatedAt: now.toISOString(),
+      sourceStatus: "live",
+      iss: {
+        latitude,
+        longitude: normalizeLongitude(longitude),
+        altitudeKm,
+        velocityKmh,
+        overheadZambia: overhead,
       },
-      { headers: { "Cache-Control": "no-store" } }
-    );
+      earthMarsDistanceKm: estimateEarthMarsDistanceKm(now),
+      satellitesOverZambiaEstimate: overhead ? 6 : 4,
+    };
   } catch {
-    return NextResponse.json(fallback, {
-      headers: { "Cache-Control": "no-store" },
-    });
+    return fallback;
   } finally {
     clearTimeout(timeout);
+  }
+}
+
+function withCacheHeader(data: SpaceLivePayload, cacheState: "HIT" | "MISS" | "STALE") {
+  return NextResponse.json(data, {
+    headers: {
+      "Cache-Control": "no-store",
+      "X-Cache": cacheState,
+    },
+  });
+}
+
+export async function GET() {
+  const nowMs = Date.now();
+  const cached = cache.get(CACHE_KEY);
+
+  if (cached && nowMs - cached.timestamp < TTL_MS) {
+    return withCacheHeader(cached.data, "HIT");
+  }
+
+  try {
+    if (!inFlight) {
+      inFlight = fetchLivePayload(new Date());
+    }
+
+    const fresh = await inFlight;
+    cache.set(CACHE_KEY, { data: fresh, timestamp: Date.now() });
+    return withCacheHeader(fresh, "MISS");
+  } catch {
+    if (cached) {
+      return withCacheHeader(cached.data, "STALE");
+    }
+
+    const fallback = fallbackPayload(new Date());
+    cache.set(CACHE_KEY, { data: fallback, timestamp: Date.now() });
+    return withCacheHeader(fallback, "MISS");
+  } finally {
+    inFlight = null;
   }
 }

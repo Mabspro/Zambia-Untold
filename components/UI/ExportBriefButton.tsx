@@ -160,7 +160,7 @@ export function ExportBriefButton({ marker, narrative }: ExportBriefButtonProps)
     <button
       onClick={handleExport}
       disabled={isExporting}
-      className={`flex items-center gap-2 rounded border border-copper/30 bg-copper/5 px-3 py-1.5 text-[10px] uppercase tracking-[0.2em] text-copper transition-colors duration-300 hover:bg-copper/15 disabled:opacity-50`}
+      className={`min-h-11 flex items-center gap-2 rounded border border-copper/30 bg-copper/5 px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-copper transition-colors duration-300 hover:bg-copper/15 disabled:opacity-50`}
     >
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -171,3 +171,4 @@ export function ExportBriefButton({ marker, narrative }: ExportBriefButtonProps)
     </button>
   );
 }
+

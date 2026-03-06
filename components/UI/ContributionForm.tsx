@@ -91,9 +91,10 @@ const STORAGE_KEY = "zambia-untold:community-submissions";
 
 type ContributionFormProps = {
   onClose: () => void;
+  onSubmitted?: () => void;
 };
 
-export function ContributionForm({ onClose }: ContributionFormProps) {
+export function ContributionForm({ onClose, onSubmitted }: ContributionFormProps) {
   const [form, setForm] = useState<ContributionFormData>(INITIAL_FORM);
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
@@ -171,6 +172,7 @@ export function ContributionForm({ onClose }: ContributionFormProps) {
 
     setSubmitting(false);
     setSubmitted(true);
+    onSubmitted?.();
   };
 
   return (
@@ -428,6 +430,9 @@ export function ContributionForm({ onClose }: ContributionFormProps) {
     </motion.aside>
   );
 }
+
+
+
 
 
 

@@ -17,4 +17,5 @@ export type LayerVisibility = {
   space?: boolean;
   earthObservation?: boolean;
   liveSatellites?: boolean;
+  community?: boolean;
 };

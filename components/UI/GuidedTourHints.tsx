@@ -140,7 +140,7 @@ export function GuidedTourHints({
           style={panelStyle}
           className="terminal-panel pointer-events-auto fixed !top-auto border border-[rgba(184,115,51,0.3)] bg-[#0A0806]/95 px-3 py-2.5 md:px-4 md:py-3"
         >
-          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#7A6550]">ZAMBIA UNTOLD · SYSTEM v1.0</p>
+          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[#7A6550]">ZAMBIA UNTOLD · SYSTEM v1.0</p>
           <div className="mt-1 border-t border-copper/30" />
 
           <div className="mt-2 min-h-[62px] font-mono text-[11px] leading-[1.45] text-[#B87333] md:min-h-[74px] md:text-[12px]">
@@ -164,7 +164,7 @@ export function GuidedTourHints({
             <button
               type="button"
               onClick={handleSkip}
-              className="font-mono border border-copper/35 px-2 py-1 text-[10px] uppercase tracking-[0.12em] text-[#B87333] hover:border-copper hover:text-[#d49752]"
+              className="font-mono border border-copper/35 px-2 py-1 text-[11px] uppercase tracking-[0.12em] text-[#B87333] hover:border-copper hover:text-[#d49752]"
             >
               SKIP BRIEFING · BOTTOM
             </button>
@@ -174,6 +174,7 @@ export function GuidedTourHints({
     </div>
   );
 }
+
 
 
 

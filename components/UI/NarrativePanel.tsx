@@ -56,7 +56,7 @@ function NarrativeBlocks({ blocks }: { blocks: NarrativeBlock[] }) {
                 />
               </div>
               {block.caption && (
-                <figcaption className="font-citation mt-2 text-[11px] italic uppercase tracking-[0.14em] text-muted">
+                <figcaption className="font-citation mt-2 text-[11px] italic uppercase tracking-[0.14em] text-muted/70">
                   {block.caption}
                 </figcaption>
               )}
@@ -120,7 +120,7 @@ function EvidenceList({ sources }: { sources: NarrativeSource[] }) {
             href={source.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="font-body text-[13px] leading-6 text-[#e6d6c3] underline decoration-copper/35 underline-offset-4 hover:text-text"
+            className="font-body text-[14px] leading-6 text-[#e6d6c3] underline decoration-copper/35 underline-offset-4 hover:text-text"
           >
             {source.label ?? source.url}
           </a>
@@ -142,7 +142,7 @@ function NkolosoMythology() {
       <p className="mb-1 text-[11px] uppercase tracking-[0.18em] text-copperSoft">
         Inganji · Nkoloso Sequence
       </p>
-      <p className="text-[12px] leading-relaxed text-[#B8A58F]">
+      <p className="text-[14px] leading-relaxed text-[#B8A58F]">
         The world read this as a joke. Zambia reads it as a thesis: scientific ambition without infrastructure gets dismissed.
       </p>
       <div className="space-y-2">
@@ -157,7 +157,7 @@ function NkolosoMythology() {
             <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-copper/80">
               {beat.year} · {beat.label}
             </p>
-            <p className="mt-1 text-[12px] text-[#D8C9B4]">{beat.text}</p>
+            <p className="mt-1 text-[14px] text-[#D8C9B4]">{beat.text}</p>
           </motion.article>
         ))}
       </div>
@@ -165,7 +165,7 @@ function NkolosoMythology() {
         <p className="text-[11px] uppercase tracking-[0.14em] text-copperSoft">
           Nkoloso&apos;s academy had no infrastructure.
         </p>
-        <p className="mt-1 text-[11px] text-muted">
+        <p className="mt-1 text-[14px] text-muted/80">
           Zambia Untold runs on Zambia&apos;s own.
         </p>
       </div>
@@ -199,7 +199,7 @@ export function NarrativePanel({
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: "10%", transition: { duration: 0.3 } }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className={`fixed bottom-0 right-0 z-30 h-[56vh] w-full border-t bg-panel/95 p-5 backdrop-blur-md md:top-0 md:h-full md:w-[35vw] md:max-w-[540px] md:border-l md:border-t-0 md:p-7 block transition-colors duration-500 ${
+          className={`narrative-panel fixed bottom-0 right-0 z-30 h-[56vh] w-full overflow-hidden border-t bg-panel/95 p-5 backdrop-blur-md md:top-0 md:h-full md:w-[35vw] md:max-w-[540px] md:border-l md:border-t-0 md:p-7 block transition-colors duration-500 ${
             contextualCard?.isFinale
               ? "border-copper/65"
               : "border-copper/30"
@@ -225,14 +225,14 @@ export function NarrativePanel({
                   {marker ? marker.epochLabel : contextualCard?.zone ?? ""}
                 </p>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center justify-end gap-2">
                 {marker && narrative && (
                   <ExportBriefButton marker={marker} narrative={narrative} />
                 )}
                 <button
                   type="button"
                   onClick={marker ? onClose : onDismissContextualCard ?? onClose}
-                  className="rounded border border-copper/40 px-2 py-1 text-xs uppercase tracking-[0.16em] text-text hover:border-copper transition-colors duration-300"
+                  className="min-h-11 rounded border border-copper/40 px-2 py-1 text-[11px] uppercase tracking-[0.16em] text-text hover:border-copper transition-colors duration-300"
                 >
                   Close
                 </button>
@@ -259,11 +259,11 @@ export function NarrativePanel({
                   {marker.subhead}
                 </motion.p>
 
-                <div className="mt-4 flex gap-1 border-b border-copper/25 pb-2">
+                <div className="narrative-tabs mt-4 flex gap-1 border-b border-copper/25 pb-2">
                   <button
                     type="button"
                     onClick={() => setActiveTab("story")}
-                    className={`px-3 py-1.5 text-[10px] uppercase tracking-[0.2em] transition-colors ${
+                    className={`narrative-tab px-3 py-1.5 text-[11px] uppercase tracking-[0.2em] transition-colors ${
                       activeTab === "story"
                         ? "border-b border-copper text-copperSoft"
                         : "text-muted hover:text-text"
@@ -274,7 +274,7 @@ export function NarrativePanel({
                   <button
                     type="button"
                     onClick={() => setActiveTab("mythology")}
-                    className={`px-3 py-1.5 text-[10px] uppercase tracking-[0.2em] transition-colors ${
+                    className={`narrative-tab px-3 py-1.5 text-[11px] uppercase tracking-[0.2em] transition-colors ${
                       activeTab === "mythology"
                         ? "border-b border-copper text-copperSoft"
                         : "text-muted hover:text-text"
@@ -285,7 +285,7 @@ export function NarrativePanel({
                   <button
                     type="button"
                     onClick={() => setActiveTab("evidence")}
-                    className={`px-3 py-1.5 text-[10px] uppercase tracking-[0.2em] transition-colors ${
+                    className={`narrative-tab px-3 py-1.5 text-[11px] uppercase tracking-[0.2em] transition-colors ${
                       activeTab === "evidence"
                         ? "border-b border-copper text-copperSoft"
                         : "text-muted hover:text-text"
@@ -467,3 +467,4 @@ export function NarrativePanel({
     </AnimatePresence>
   );
 }
+

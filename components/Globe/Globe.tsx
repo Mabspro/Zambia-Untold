@@ -40,6 +40,9 @@ type GlobeProps = {
   onUserInteract?: () => void;
   /** During lobby, gently orient camera to Zambia/Africa before thesis. */
   focusAfricaDuringLobby?: boolean;
+  /** Fires when a user opens a community archive point detail. */
+  onCommunityMemoryOpen?: () => void;
+  lowFiMode?: boolean;
 };
 
 type CityLightsProps = {
@@ -213,9 +216,11 @@ function LiveSatelliteLayer({ active, satellites }: LiveSatelliteLayerProps) {
 function CommunityContributionLayer({
   active,
   items,
+  onOpen,
 }: {
   active: boolean;
   items: CommunityContributionSample[];
+  onOpen?: () => void;
 }) {
   const { camera } = useThree();
   const [selected, setSelected] = useState<CommunityContributionSample | null>(null);
@@ -254,6 +259,7 @@ function CommunityContributionLayer({
               onClick={(event) => {
                 event.stopPropagation();
                 setSelected(item);
+                onOpen?.();
               }}
               onPointerOver={() => {
                 document.body.style.cursor = "pointer";
@@ -364,7 +370,8 @@ const DEFAULT_LAYERS: LayerVisibility = {
   zambezi: true,
   space: true,
   earthObservation: true,
-  liveSatellites: true,
+  liveSatellites: false,
+  community: true,
 };
 
 const ATMOSPHERE_NEAR = 1.3;
@@ -389,6 +396,8 @@ function Scene({
   onFlyToPinExpire,
   onUserInteract,
   focusAfricaDuringLobby = false,
+  onCommunityMemoryOpen,
+  lowFiMode = false,
 }: GlobeProps) {
   const { clock, gl, camera } = useThree();
   const globeRef = useRef<THREE.Group>(null);
@@ -612,7 +621,7 @@ function Scene({
       if (lastInteractionRef.current === 0) lastInteractionRef.current = now;
       const idleTime = now - lastInteractionRef.current;
 
-      if (idleTime > 8) {
+      if (!lowFiMode && idleTime > 8) {
         snapActiveRef.current = true;
       }
 
@@ -629,7 +638,7 @@ function Scene({
           controls.target.distanceTo(africaTargetRef.current) < 0.008;
         if (cameraSettled && targetSettled) {
           snapActiveRef.current = false;
-          controls.autoRotate = true;
+          controls.autoRotate = !lowFiMode;
           lastInteractionRef.current = now;
         }
       }
@@ -691,9 +700,9 @@ function Scene({
 
       {/* Stars + Sparkles: render first (background) so they're visible in dev and prod */}
       <group renderOrder={-1}>
-        <Stars radius={120} depth={40} count={500} factor={3.5} saturation={0} fade />
+        <Stars radius={120} depth={40} count={lowFiMode ? 250 : 500} factor={3.5} saturation={0} fade />
         <Sparkles
-          count={22}
+          count={lowFiMode ? 0 : 22}
           scale={[2.5, 2.5, 2.5]}
           size={1.0}
           speed={0.05}
@@ -712,7 +721,7 @@ function Scene({
         maxDistance={5}
         enableDamping
         dampingFactor={0.045}
-        autoRotate={!selectedMarker && !focusAfricaDuringLobby} // Keep intro focus stable until Africa is centered
+        autoRotate={!lowFiMode && !selectedMarker && !focusAfricaDuringLobby} // Keep intro focus stable until Africa is centered
         autoRotateSpeed={0.15}
         minPolarAngle={0.15}
         maxPolarAngle={Math.PI - 0.15}
@@ -728,17 +737,17 @@ function Scene({
         }}
       />
       <group ref={globeRef}>
-        {layerVisibility.boundary !== false && (
+        {showHUD && layerVisibility.boundary !== false && (
           <ZambiaBoundary selectedMarker={!!selectedMarker} />
         )}
-        {layerVisibility.zambezi !== false && (
+        {showHUD && layerVisibility.zambezi !== false && (
           <ZambeziLayer scrubYear={scrubYear} />
         )}
-        <KatangaFormationLayer scrubYear={scrubYear} />
-        {layerVisibility.province !== false && (
+        {showHUD && <KatangaFormationLayer scrubYear={scrubYear} />}
+        {showHUD && layerVisibility.province !== false && (
           <ProvinceHighlight activeMarkerId={selectedMarker?.id ?? null} />
         )}
-        <EarthObservationLayer active={layerVisibility.earthObservation !== false} />
+        {showHUD && <EarthObservationLayer active={layerVisibility.earthObservation !== false} />}
         <mesh>
           <sphereGeometry args={[1, 64, 64]} />
           <meshStandardMaterial
@@ -778,24 +787,25 @@ function Scene({
             opacity={0.07}
           />
         </mesh>
-        <CityLights xrayMixRef={xrayMixRef} />
-        <ISSOrbitTrack enabled={layerVisibility.space !== false} />
+        {showHUD && <CityLights xrayMixRef={xrayMixRef} />}
+        <ISSOrbitTrack enabled={showHUD && layerVisibility.space !== false} />
         <LiveSatelliteLayer
-          active={layerVisibility.space !== false && layerVisibility.liveSatellites !== false}
+          active={showHUD && layerVisibility.space !== false && layerVisibility.liveSatellites !== false}
           satellites={liveSatellites}
         />
         <CommunityMissionTrackLayer
-          active={layerVisibility.space !== false}
+          active={showHUD && layerVisibility.space !== false}
           missions={approvedMissions}
         />
         <CommunityContributionLayer
-          active={showHUD}
+          active={showHUD && layerVisibility.community !== false}
           items={approvedContributions}
+          onOpen={onCommunityMemoryOpen}
         />
-        {layerVisibility.particles !== false && (
-          <LusakaParticleSwarm active={selectedMarker?.id === "lusaka-independence"} />
+        {showHUD && layerVisibility.particles !== false && (
+          <LusakaParticleSwarm active={selectedMarker?.id === "lusaka-independence"} density={lowFiMode ? 0.25 : 1} />
         )}
-        {MARKERS.map((marker) => (
+        {showHUD && MARKERS.map((marker) => (
           <GlobeMarker
             key={marker.id}
             marker={marker}
@@ -864,6 +874,8 @@ export function Globe({
   onFlyToPinExpire,
   onUserInteract,
   focusAfricaDuringLobby = false,
+  onCommunityMemoryOpen,
+  lowFiMode = false,
 }: GlobeProps) {
   const { fov, distance } = useResponsiveViewport(42, 3.2);
   const initialCamera = useMemo(() => africaCenteredCameraPosition(distance), [distance]);
@@ -901,10 +913,32 @@ export function Globe({
         onFlyToPinExpire={onFlyToPinExpire}
         onUserInteract={onUserInteract}
         focusAfricaDuringLobby={focusAfricaDuringLobby}
+        onCommunityMemoryOpen={onCommunityMemoryOpen}
+        lowFiMode={lowFiMode}
       />
     </Canvas>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

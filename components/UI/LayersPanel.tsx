@@ -90,7 +90,7 @@ export function LayersPanel({
       <span className="text-[11px] uppercase tracking-[0.14em] text-text/80 transition-colors group-hover:text-copper">
         {item.label}
       </span>
-      {isVisited(item.era) && <span className="ml-auto text-[8px] text-copper/50">✓</span>}
+      {isVisited(item.era) && <span className="ml-auto text-[11px] text-copper/70">✓</span>}
     </button>
   );
 
@@ -111,7 +111,7 @@ export function LayersPanel({
 
       {!collapsed && (
         <div style={{ maxHeight: contentMaxHeight }} className="overflow-y-auto space-y-1 border-t border-copper/20 px-4 py-3">
-          <p className="mb-2 font-display text-[10px] uppercase tracking-[0.22em] text-copper/60">Era Jump</p>
+          <p className="mb-2 font-display text-[11px] uppercase tracking-[0.22em] text-copper/70">Era Jump</p>
           {DEEP_TIME_ERAS.map(renderEraRow)}
 
           <div className="my-3 border-t border-copper/15" />
@@ -119,13 +119,13 @@ export function LayersPanel({
 
           {hoveredEra && ERA_HINTS[hoveredEra] && (
             <div className="mt-2 animate-[fade-in_0.15s_ease-out] rounded border border-copper/20 bg-panel/80 px-3 py-2">
-              <p className="text-[10px] italic leading-[1.6] text-muted">{ERA_HINTS[hoveredEra]}</p>
+              <p className="text-[11px] italic leading-[1.6] text-muted/70">{ERA_HINTS[hoveredEra]}</p>
             </div>
           )}
 
           <div className="my-3 border-t border-copper/15" />
 
-          <p className="mb-2 font-display text-[10px] uppercase tracking-[0.22em] text-copper/60">Overlays</p>
+          <p className="mb-2 font-display text-[11px] uppercase tracking-[0.22em] text-copper/70">Overlays</p>
           <label className="group flex cursor-pointer items-center gap-2.5 px-2 py-1">
             <input type="checkbox" checked={visibility.boundary} onChange={() => toggle("boundary")} className="h-3.5 w-3.5 rounded border-copper/50 bg-bg text-copper" />
             <span className="text-[11px] uppercase tracking-[0.12em] text-text/80 transition-colors group-hover:text-copper">Zambia boundary</span>
@@ -154,20 +154,28 @@ export function LayersPanel({
             <input type="checkbox" checked={visibility.liveSatellites !== false} onChange={() => toggle("liveSatellites")} className="h-3.5 w-3.5 rounded border-copper/50 bg-bg text-copper" />
             <span className="text-[11px] uppercase tracking-[0.12em] text-text/80 transition-colors group-hover:text-copper">Live satellites</span>
           </label>
-
+          <label className="group flex cursor-pointer items-center gap-2.5 px-2 py-1">
+            <input type="checkbox" checked={visibility.community !== false} onChange={() => toggle("community")} className="h-3.5 w-3.5 rounded border-copper/50 bg-bg text-copper" />
+            <span className="text-[11px] uppercase tracking-[0.12em] text-text/80 transition-colors group-hover:text-copper">Community archive</span>
+          </label>
           {visibility.space !== false && (
             <>
               <div className="my-3 border-t border-copper/15" />
-              <p className="mb-2 font-display text-[10px] uppercase tracking-[0.22em] text-copper/60">Space Dreams</p>
-              <button type="button" onClick={() => onSelectMarker?.("nkoloso-space-academy")} className="w-full rounded border border-copper/20 bg-copper/5 px-2 py-1.5 text-left text-[10px] uppercase tracking-[0.12em] text-text/85 hover:border-copper/40">Jump to Nkoloso (1964)</button>
-              <button type="button" onClick={onOpenSpaceMission} className="mt-1.5 w-full rounded border border-copper/20 bg-copper/5 px-2 py-1.5 text-left text-[10px] uppercase tracking-[0.12em] text-text/85 hover:border-copper/40">Build Zambia&apos;s Satellite</button>
+              <div className="group relative mb-2">
+                <p className="font-display text-[11px] uppercase tracking-[0.22em] text-copper/80">Space Dreams</p>
+                <div className="museum-tooltip absolute left-0 top-6 z-10 w-[300px] border border-copper/30 bg-[#0A0806] px-2 py-1.5 text-[11px] leading-relaxed text-copperSoft whitespace-pre-line">
+                  {"Edward Mukuka Nkoloso aimed for Mars in 1964.\nZambia has not launched a satellite yet.\nThat is about to change."}
+                </div>
+              </div>
+              <button type="button" onClick={() => onSelectMarker?.("nkoloso-space-academy")} className="w-full rounded border border-copper/20 bg-copper/5 px-2 py-1.5 text-left text-[11px] uppercase tracking-[0.12em] text-text/85 hover:border-copper/40">Jump to Nkoloso (1964)</button>
+              <button type="button" onClick={onOpenSpaceMission} className="mt-1.5 w-full rounded border border-copper/20 bg-copper/5 px-2 py-1.5 text-left text-[11px] uppercase tracking-[0.12em] text-text/85 hover:border-copper/40">Build Zambia&apos;s Satellite</button>
             </>
           )}
 
           <div className="mt-3 border-t border-copper/10 pt-2">
             <div className="flex items-center justify-between">
-              <p className="text-[9px] uppercase tracking-[0.16em] text-muted">Journey Progress</p>
-              <p className="text-[9px] text-copper/70">{visitedZones.length}/8 eras</p>
+              <p className="text-[11px] uppercase tracking-[0.16em] text-muted/70">Journey Progress</p>
+              <p className="text-[11px] text-copper/70">{visitedZones.length}/8 eras</p>
             </div>
             <div className="mt-2 flex items-center gap-1">
               {[...DEEP_TIME_ERAS, ...HUMAN_TIME_ERAS].map((item) => (
@@ -180,6 +188,10 @@ export function LayersPanel({
     </aside>
   );
 }
+
+
+
+
 
 
 

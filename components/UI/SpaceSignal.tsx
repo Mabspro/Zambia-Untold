@@ -41,6 +41,13 @@ type SpaceCatalogPayload = {
   };
 };
 
+type SpaceCatalogCountsPayload = {
+  totalTracked: number;
+  overZambia: number;
+  timestamp: string;
+  cached: boolean;
+};
+
 type NoradPayload = {
   generatedAt: string;
   sourceStatus: "live" | "fallback";
@@ -82,19 +89,28 @@ type ModerationStatsPayload = {
 type SpaceSignalProps = {
   enabled: boolean;
   earthObservationEnabled: boolean;
+  liveSatellitesEnabled?: boolean;
   onOpenMissionBuilder?: () => void;
   /** When true, mobile compact panel is hidden to avoid overlapping the guided tour. */
   guidedTourActive?: boolean;
 };
 
-export function SpaceSignal({ enabled, earthObservationEnabled, onOpenMissionBuilder, guidedTourActive }: SpaceSignalProps) {
+export function SpaceSignal({
+  enabled,
+  earthObservationEnabled,
+  liveSatellitesEnabled = false,
+  onOpenMissionBuilder,
+  guidedTourActive,
+}: SpaceSignalProps) {
   const [data, setData] = useState<SpaceSignalPayload | null>(null);
-  const [catalog, setCatalog] = useState<SpaceCatalogPayload | null>(null);
+  const [catalogCounts, setCatalogCounts] = useState<SpaceCatalogCountsPayload | null>(null);
+  const [catalogFull, setCatalogFull] = useState<SpaceCatalogPayload | null>(null);
   const [norad, setNorad] = useState<NoradPayload | null>(null);
   const [earth, setEarth] = useState<EarthObservationPayload | null>(null);
   const [approvedCommunity, setApprovedCommunity] = useState<ApprovedListPayload | null>(null);
   const [approvedMissions, setApprovedMissions] = useState<ApprovedListPayload | null>(null);
   const [moderationStats, setModerationStats] = useState<ModerationStatsPayload | null>(null);
+  const [mobileExpanded, setMobileExpanded] = useState(false);
 
   useEffect(() => {
     if (!enabled) return;
@@ -103,9 +119,9 @@ export function SpaceSignal({ enabled, earthObservationEnabled, onOpenMissionBui
 
     const load = async () => {
       try {
-        const [liveRes, catalogRes, noradRes, earthRes, approvedCommunityRes, approvedMissionsRes, moderationRes] = await Promise.all([
+        const [liveRes, countsRes, noradRes, earthRes, approvedCommunityRes, approvedMissionsRes, moderationRes] = await Promise.all([
           fetch("/api/space/live", { cache: "no-store" }),
-          fetch("/api/space/catalog", { cache: "no-store" }),
+          fetch("/api/space/catalog?counts=true", { cache: "no-store" }),
           fetch("/api/space/norad", { cache: "no-store" }),
           earthObservationEnabled
             ? fetch("/api/earth/observation", { cache: "no-store" })
@@ -119,9 +135,9 @@ export function SpaceSignal({ enabled, earthObservationEnabled, onOpenMissionBui
           const payload = (await liveRes.json()) as SpaceSignalPayload;
           if (!cancelled) setData(payload);
         }
-        if (catalogRes.ok) {
-          const payload = (await catalogRes.json()) as SpaceCatalogPayload;
-          if (!cancelled) setCatalog(payload);
+        if (countsRes.ok) {
+          const payload = (await countsRes.json()) as SpaceCatalogCountsPayload;
+          if (!cancelled) setCatalogCounts(payload);
         }
         if (noradRes.ok) {
           const payload = (await noradRes.json()) as NoradPayload;
@@ -143,6 +159,16 @@ export function SpaceSignal({ enabled, earthObservationEnabled, onOpenMissionBui
           const payload = (await moderationRes.json()) as ModerationStatsPayload;
           if (!cancelled) setModerationStats(payload);
         }
+
+        if (liveSatellitesEnabled) {
+          const fullCatalogRes = await fetch("/api/space/catalog", { cache: "no-store" });
+          if (fullCatalogRes.ok) {
+            const payload = (await fullCatalogRes.json()) as SpaceCatalogPayload;
+            if (!cancelled) setCatalogFull(payload);
+          }
+        } else if (!cancelled) {
+          setCatalogFull(null);
+        }
       } catch {
         // Keep prior payload if fetch fails.
       }
@@ -154,60 +180,63 @@ export function SpaceSignal({ enabled, earthObservationEnabled, onOpenMissionBui
       cancelled = true;
       clearInterval(id);
     };
-  }, [enabled, earthObservationEnabled]);
+  }, [enabled, earthObservationEnabled, liveSatellitesEnabled]);
 
   if (!enabled || !data) return null;
 
-  const overNow = catalog?.satellites.filter((s) => s.overZambiaNow).slice(0, 3) ?? [];
+  const overNow = catalogFull?.satellites.filter((s) => s.overZambiaNow).slice(0, 3) ?? [];
   const earthEvents = earth?.events.slice(0, 3) ?? [];
 
   return (
     <>
-      <aside className="pointer-events-auto absolute right-4 top-[6.5rem] z-20 hidden w-[min(380px,34vw)] rounded border border-copper/30 bg-bg/85 px-3 py-2 backdrop-blur-md md:block">
-        <p className="font-display text-[10px] uppercase tracking-[0.18em] text-copperSoft">Space Signal</p>
-        <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.12em] text-muted/70">
+      <aside className="pointer-events-auto absolute right-4 top-[6.5rem] z-20 hidden w-[min(380px,34vw)] border border-copper/30 bg-bg/85 px-3 py-2 backdrop-blur-md md:block">
+        <p className="font-display text-[11px] uppercase tracking-[0.18em] text-copperSoft">Space Signal</p>
+        <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.12em] text-muted/75">
           ISS {data.iss.overheadZambia ? "Over Zambia" : "Not Over Zambia"}
         </p>
-        <div className="mt-1.5 grid grid-cols-2 gap-x-2 gap-y-1 text-[10px] text-text/80">
+
+        <div className="mt-1.5 grid grid-cols-2 gap-x-2 gap-y-1 text-[11px] text-text/75">
           <span>Alt: {Math.round(data.iss.altitudeKm)} km</span>
           <span>Vel: {Math.round(data.iss.velocityKmh)} km/h</span>
           <span>Mars gap: {Math.round(data.earthMarsDistanceKm).toLocaleString()} km</span>
           <span>Pass est.: {data.satellitesOverZambiaEstimate}</span>
         </div>
 
-        <p className="mt-1 text-[8px] uppercase tracking-[0.1em] text-muted/55">Orbital: CelesTrak/NORAD + wheretheiss.at · Compute: CopperCloud</p>
+        <p className="mt-1 text-[11px] uppercase tracking-[0.1em] text-muted/75">Orbital: CelesTrak/NORAD + wheretheiss.at · Compute: CopperCloud</p>
+
+        {catalogCounts && (
+          <div className="mt-2 border border-copper/20 bg-panel/55 px-2 py-1.5">
+            <p className="text-[11px] uppercase tracking-[0.14em] text-copper/85">
+              Live Satellites · Over Zambia Now: {catalogCounts.overZambia}
+            </p>
+            {liveSatellitesEnabled && overNow.length > 0 ? (
+              <div className="mt-1 space-y-0.5">
+                {overNow.map((sat) => (
+                  <p key={sat.id} className="text-[11px] text-muted/80">
+                    {sat.name} · {Math.round(sat.altitudeKm)} km
+                  </p>
+                ))}
+              </div>
+            ) : liveSatellitesEnabled ? (
+              <p className="mt-1 text-[11px] text-muted/80">No tracked satellite directly overhead this minute.</p>
+            ) : (
+              <p className="mt-1 text-[11px] text-muted/80">Enable Live Satellites layer to inspect overhead objects.</p>
+            )}
+          </div>
+        )}
 
         {norad && (
-          <div className="mt-2 rounded border border-copper/20 bg-panel/55 px-2 py-1.5">
-            <p className="text-[9px] uppercase tracking-[0.14em] text-copper/70">
+          <div className="mt-2 border border-copper/20 bg-panel/55 px-2 py-1.5">
+            <p className="text-[11px] uppercase tracking-[0.14em] text-muted/75">
               NORAD Parsed: {norad.counts.totalParsed} · Over Zambia Now: {norad.counts.overZambiaNow}
             </p>
           </div>
         )}
 
-        {catalog && (
-          <div className="mt-2 rounded border border-copper/20 bg-panel/55 px-2 py-1.5">
-            <p className="text-[9px] uppercase tracking-[0.14em] text-copper/70">
-              Live Satellites · Over Zambia Now: {catalog.counts.overZambiaNow}
-            </p>
-            {overNow.length > 0 ? (
-              <div className="mt-1 space-y-0.5">
-                {overNow.map((sat) => (
-                  <p key={sat.id} className="text-[9px] text-muted/85">
-                    {sat.name} · {Math.round(sat.altitudeKm)} km
-                  </p>
-                ))}
-              </div>
-            ) : (
-              <p className="mt-1 text-[9px] text-muted/70">No tracked satellite directly overhead this minute.</p>
-            )}
-          </div>
-        )}
-
         {(approvedCommunity || approvedMissions) && (
-          <div className="mt-2 rounded border border-copper/20 bg-panel/55 px-2 py-1.5">
-            <p className="text-[9px] uppercase tracking-[0.14em] text-copper/70">Living Archive · Approved</p>
-            <div className="mt-1 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[9px] text-muted/85">
+          <div className="mt-2 border border-copper/20 bg-panel/55 px-2 py-1.5">
+            <p className="text-[11px] uppercase tracking-[0.14em] text-copper/80">Living Archive · Approved</p>
+            <div className="mt-1 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[11px] text-muted/80">
               <span>Isibalo: {approvedCommunity?.count ?? 0}</span>
               <span>Missions: {approvedMissions?.count ?? 0}</span>
             </div>
@@ -215,9 +244,9 @@ export function SpaceSignal({ enabled, earthObservationEnabled, onOpenMissionBui
         )}
 
         {moderationStats && (
-          <div className="mt-2 rounded border border-copper/20 bg-panel/55 px-2 py-1.5">
-            <p className="text-[9px] uppercase tracking-[0.14em] text-copper/70">Moderation Queue</p>
-            <div className="mt-1 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[9px] text-muted/85">
+          <div className="mt-2 border border-copper/20 bg-panel/55 px-2 py-1.5">
+            <p className="text-[11px] uppercase tracking-[0.14em] text-muted/75">Moderation Queue</p>
+            <div className="mt-1 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[11px] text-muted/75">
               <span>Community pending: {moderationStats.community.pending}</span>
               <span>Mission pending: {moderationStats.missions.pending}</span>
               <span>Community rejected: {moderationStats.community.rejected}</span>
@@ -227,72 +256,92 @@ export function SpaceSignal({ enabled, earthObservationEnabled, onOpenMissionBui
         )}
 
         {earthObservationEnabled && earth && (
-          <div className="mt-2 rounded border border-copper/20 bg-panel/55 px-2 py-1.5">
-            <p className="text-[9px] uppercase tracking-[0.14em] text-copper/70">
+          <div className="mt-2 border border-copper/20 bg-panel/55 px-2 py-1.5">
+            <p className="text-[11px] uppercase tracking-[0.14em] text-copper/85">
               Earth Observation · Open Events in Zambia Region: {earth.count}
             </p>
             {earthEvents.length > 0 ? (
               <div className="mt-1 space-y-0.5">
                 {earthEvents.map((event) => (
-                  <p key={event.id} className="text-[9px] text-muted/85">
+                  <p key={event.id} className="text-[11px] text-muted/85">
                     {event.title}
                   </p>
                 ))}
               </div>
             ) : (
-              <p className="mt-1 text-[9px] text-muted/70">No open remote-sensed events reported now.</p>
+              <p className="mt-1 text-[11px] text-muted/80">No open remote-sensed events reported now.</p>
             )}
           </div>
         )}
 
         <div className="mt-2 flex items-center justify-between gap-2">
-          <p className="font-mono text-[8px] uppercase tracking-[0.1em] text-muted/50">
+          <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-muted/75">
             {data.sourceStatus === "live" ? "Live feed" : "Fallback model"} · Updated {new Date(data.generatedAt).toLocaleTimeString()}
           </p>
           <button
             type="button"
             onClick={onOpenMissionBuilder}
-            className="rounded border border-copper/30 px-2 py-1 text-[9px] uppercase tracking-[0.12em] text-copperSoft hover:border-copper"
+            className="rounded border border-copper/30 px-2 py-1 text-[11px] uppercase tracking-[0.12em] text-copperSoft hover:border-copper"
           >
             Build Mission
           </button>
         </div>
       </aside>
 
-      {/* Mobile: top-right below header to avoid overlapping globe + action bar / tour. Hidden when guided tour is active. */}
       {!(guidedTourActive === true) && (
-      <aside className="pointer-events-auto absolute top-[5.5rem] right-3 z-20 w-[min(88vw,300px)] rounded border border-copper/30 bg-bg/88 px-2.5 py-2 backdrop-blur-md md:hidden">
-        <div className="flex items-center justify-between gap-2">
-          <p className="font-display text-[9px] uppercase tracking-[0.16em] text-copperSoft">Space Signal</p>
-          <p className="font-mono text-[8px] uppercase tracking-[0.1em] text-muted/60">
-            {data.iss.overheadZambia ? "ISS overhead" : "ISS not overhead"}
-          </p>
-        </div>
-        <div className="mt-1 grid grid-cols-2 gap-x-2 text-[9px] text-text/80">
-          <span>Sat over ZM: {catalog?.counts.overZambiaNow ?? 0}</span>
-          <span>Mars: {Math.round(data.earthMarsDistanceKm / 1_000_000)}M km</span>
-          <span>Isibalo ok: {approvedCommunity?.count ?? 0}</span>
-          <span>Mission ok: {approvedMissions?.count ?? 0}</span>
-        </div>
-        {moderationStats && (
-          <p className="mt-1 text-[8px] uppercase tracking-[0.1em] text-muted/65">
-            Queue: C {moderationStats.community.pending} · M {moderationStats.missions.pending}
-          </p>
-        )}
-        <div className="mt-1.5 flex items-center justify-between">
-          <p className="font-mono text-[8px] uppercase tracking-[0.1em] text-muted/55">
-            {data.sourceStatus === "live" ? "Live" : "Fallback"}
-          </p>
-          <button
-            type="button"
-            onClick={onOpenMissionBuilder}
-            className="rounded border border-copper/30 px-2 py-1 text-[8px] uppercase tracking-[0.12em] text-copperSoft hover:border-copper"
-          >
-            Mission
-          </button>
-        </div>
-      </aside>
+        <aside className="pointer-events-auto fixed bottom-[6.4rem] left-3 right-3 z-20 border border-copper/30 bg-bg/88 px-2.5 py-2 backdrop-blur-md md:hidden">
+          {!mobileExpanded ? (
+            <div className="flex items-center justify-between gap-2">
+              <p className="font-display text-[11px] uppercase tracking-[0.16em] text-copperSoft">Space Signal</p>
+              <div className="flex items-center gap-2">
+                <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-muted/75">
+                  Sat over ZM: {catalogCounts?.overZambia ?? 0}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setMobileExpanded(true)}
+                  className="min-h-11 rounded border border-copper/30 px-2 py-1 text-[11px] uppercase tracking-[0.12em] text-copperSoft"
+                >
+                  Open
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between gap-2">
+                <p className="font-display text-[11px] uppercase tracking-[0.16em] text-copperSoft">Space Signal</p>
+                <button
+                  type="button"
+                  onClick={() => setMobileExpanded(false)}
+                  className="min-h-11 rounded border border-copper/25 px-2 py-1 text-[11px] uppercase tracking-[0.12em] text-muted/80"
+                >
+                  Close
+                </button>
+              </div>
+              <div className="mt-1 grid grid-cols-2 gap-x-2 text-[11px] text-text/80">
+                <span>ISS: {data.iss.overheadZambia ? "Overhead" : "Not overhead"}</span>
+                <span>Sat over ZM: {catalogCounts?.overZambia ?? 0}</span>
+                <span>Mars: {Math.round(data.earthMarsDistanceKm / 1_000_000)}M km</span>
+                <span>Queue: {moderationStats ? moderationStats.community.pending + moderationStats.missions.pending : 0}</span>
+              </div>
+              <div className="mt-1.5 flex items-center justify-between">
+                <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-muted/75">
+                  {data.sourceStatus === "live" ? "Live" : "Fallback"}
+                </p>
+                <button
+                  type="button"
+                  onClick={onOpenMissionBuilder}
+                  className="min-h-11 rounded border border-copper/30 px-2 py-1 text-[11px] uppercase tracking-[0.12em] text-copperSoft hover:border-copper"
+                >
+                  Mission
+                </button>
+              </div>
+            </>
+          )}
+        </aside>
       )}
+
     </>
   );
 }
+

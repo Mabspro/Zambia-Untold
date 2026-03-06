@@ -9,6 +9,8 @@ type NominatimResult = {
 };
 
 const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
+const NOMINATIM_CONTACT_EMAIL =
+  process.env.NOMINATIM_CONTACT_EMAIL ?? "team@zambiauntold.org";
 
 function toSearchResults(rows: NominatimResult[]) {
   return rows
@@ -38,7 +40,10 @@ export async function GET(request: Request) {
   const q = (searchParams.get("q") ?? "").trim();
 
   if (q.length < 2 || q.length > 80) {
-    return NextResponse.json({ results: [] }, { status: 200, headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json(
+      { results: [] },
+      { status: 200, headers: { "Cache-Control": "no-store" } }
+    );
   }
 
   const upstream = new URL(NOMINATIM_URL);
@@ -56,14 +61,18 @@ export async function GET(request: Request) {
       method: "GET",
       signal: controller.signal,
       headers: {
-        "Accept": "application/json",
-        "User-Agent": "ZambiaUntold/1.0 (contact: zambiauntold@local)",
+        Accept: "application/json",
+        "User-Agent": `ZambiaUntold/1.0 (contact: ${NOMINATIM_CONTACT_EMAIL})`,
+        From: NOMINATIM_CONTACT_EMAIL,
       },
       cache: "no-store",
     });
 
     if (!res.ok) {
-      return NextResponse.json({ results: [] }, { status: 200, headers: { "Cache-Control": "no-store" } });
+      return NextResponse.json(
+        { results: [] },
+        { status: 200, headers: { "Cache-Control": "no-store" } }
+      );
     }
 
     const data = (await res.json()) as NominatimResult[];
@@ -72,7 +81,10 @@ export async function GET(request: Request) {
       { status: 200, headers: { "Cache-Control": "no-store" } }
     );
   } catch {
-    return NextResponse.json({ results: [] }, { status: 200, headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json(
+      { results: [] },
+      { status: 200, headers: { "Cache-Control": "no-store" } }
+    );
   } finally {
     clearTimeout(timeout);
   }

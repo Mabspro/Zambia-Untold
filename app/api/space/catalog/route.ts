@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
 const WHERETHEISS_BASE = "https://api.wheretheiss.at/v1/satellites";
+const CACHE_KEY = "catalog";
+const TTL_MS = 60_000;
 
 type SatelliteSeed = {
   id: number;
@@ -18,6 +20,38 @@ type SatelliteLive = {
   visibility: string;
 };
 
+type CatalogSatellite = {
+  id: number;
+  name: string;
+  operator: string;
+  latitude: number;
+  longitude: number;
+  altitudeKm: number;
+  velocityKmh: number;
+  visibility: string;
+  overZambiaNow: boolean;
+  nearbyNow: boolean;
+};
+
+type SpaceCatalogPayload = {
+  generatedAt: string;
+  sourceStatus: "live" | "fallback";
+  source: string;
+  satellites: CatalogSatellite[];
+  counts: {
+    tracked: number;
+    nearbyNow: number;
+    overZambiaNow: number;
+  };
+};
+
+type SpaceCatalogCountsPayload = {
+  totalTracked: number;
+  overZambia: number;
+  timestamp: string;
+  cached: boolean;
+};
+
 const SATELLITES: SatelliteSeed[] = [
   { id: 25544, name: "ISS", operator: "International" },
   { id: 20580, name: "Hubble", operator: "NASA/ESA" },
@@ -30,6 +64,9 @@ const SATELLITES: SatelliteSeed[] = [
   { id: 42063, name: "Sentinel-2B", operator: "ESA" },
   { id: 40697, name: "Sentinel-2A", operator: "ESA" },
 ];
+
+const cache = new Map<string, { data: SpaceCatalogPayload; timestamp: number }>();
+let inFlight: Promise<SpaceCatalogPayload> | null = null;
 
 function normalizeLongitude(lng: number): number {
   if (lng > 180) return lng - 360;
@@ -78,13 +115,13 @@ async function fetchOne(seed: SatelliteSeed, signal: AbortSignal) {
     visibility: row.visibility,
     overZambiaNow: overNow,
     nearbyNow,
-  };
+  } satisfies CatalogSatellite;
 }
 
-function fallback(nowIso: string) {
+function fallback(nowIso: string): SpaceCatalogPayload {
   return {
     generatedAt: nowIso,
-    sourceStatus: "fallback" as const,
+    sourceStatus: "fallback",
     source: "wheretheiss.at curated-set",
     satellites: [
       {
@@ -108,8 +145,7 @@ function fallback(nowIso: string) {
   };
 }
 
-export async function GET() {
-  const nowIso = new Date().toISOString();
+async function fetchCatalogPayload(nowIso: string): Promise<SpaceCatalogPayload> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 6000);
 
@@ -121,33 +157,80 @@ export async function GET() {
     const satellites = rows.filter((row): row is NonNullable<typeof row> => row !== null);
 
     if (satellites.length === 0) {
-      return NextResponse.json(fallback(nowIso), {
-        headers: { "Cache-Control": "no-store" },
-      });
+      return fallback(nowIso);
     }
 
     const over = satellites.filter((s) => s.overZambiaNow);
     const nearby = satellites.filter((s) => s.nearbyNow);
 
-    return NextResponse.json(
-      {
-        generatedAt: nowIso,
-        sourceStatus: "live" as const,
-        source: "wheretheiss.at curated-set",
-        satellites,
-        counts: {
-          tracked: SATELLITES.length,
-          nearbyNow: nearby.length,
-          overZambiaNow: over.length,
-        },
+    return {
+      generatedAt: nowIso,
+      sourceStatus: "live",
+      source: "wheretheiss.at curated-set",
+      satellites,
+      counts: {
+        tracked: SATELLITES.length,
+        nearbyNow: nearby.length,
+        overZambiaNow: over.length,
       },
-      { headers: { "Cache-Control": "no-store" } }
-    );
+    };
   } catch {
-    return NextResponse.json(fallback(nowIso), {
-      headers: { "Cache-Control": "no-store" },
-    });
+    return fallback(nowIso);
   } finally {
     clearTimeout(timeout);
+  }
+}
+
+function toCountsPayload(payload: SpaceCatalogPayload, cached: boolean): SpaceCatalogCountsPayload {
+  return {
+    totalTracked: payload.counts.tracked,
+    overZambia: payload.counts.overZambiaNow,
+    timestamp: payload.generatedAt,
+    cached,
+  };
+}
+
+function withCacheHeader(
+  payload: SpaceCatalogPayload,
+  cacheState: "HIT" | "MISS" | "STALE",
+  countsOnly: boolean
+) {
+  const responseBody = countsOnly ? toCountsPayload(payload, cacheState !== "MISS") : payload;
+  return NextResponse.json(responseBody, {
+    headers: {
+      "Cache-Control": "no-store",
+      "X-Cache": cacheState,
+    },
+  });
+}
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const countsOnly = searchParams.get("counts") === "true";
+  const cached = cache.get(CACHE_KEY);
+  const nowMs = Date.now();
+
+  if (cached && nowMs - cached.timestamp < TTL_MS) {
+    return withCacheHeader(cached.data, "HIT", countsOnly);
+  }
+
+  try {
+    if (!inFlight) {
+      inFlight = fetchCatalogPayload(new Date().toISOString());
+    }
+
+    const fresh = await inFlight;
+    cache.set(CACHE_KEY, { data: fresh, timestamp: Date.now() });
+    return withCacheHeader(fresh, "MISS", countsOnly);
+  } catch {
+    if (cached) {
+      return withCacheHeader(cached.data, "STALE", countsOnly);
+    }
+
+    const fallbackPayload = fallback(new Date().toISOString());
+    cache.set(CACHE_KEY, { data: fallbackPayload, timestamp: Date.now() });
+    return withCacheHeader(fallbackPayload, "MISS", countsOnly);
+  } finally {
+    inFlight = null;
   }
 }

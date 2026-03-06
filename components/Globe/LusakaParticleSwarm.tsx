@@ -40,7 +40,7 @@ function smoothStep(edge0: number, edge1: number, x: number) {
   return t * t * (3 - 2 * t);
 }
 
-export function LusakaParticleSwarm({ active }: { active: boolean }) {
+export function LusakaParticleSwarm({ active, density = 1 }: { active: boolean; density?: number }) {
   const pointsRef = useRef<THREE.Points>(null);
   const alphaArrayRef = useRef<Float32Array | null>(null);
   const distArrayRef = useRef<Float32Array | null>(null);
@@ -78,7 +78,8 @@ export function LusakaParticleSwarm({ active }: { active: boolean }) {
 
       if (rawPoints.length === 0) return;
 
-      const downsampled = lttbDownsample(rawPoints, MAX_PARTICLES).map((point) => ({
+      const sampledMax = Math.max(1, Math.round(MAX_PARTICLES * THREE.MathUtils.clamp(density, 0.1, 1)));
+      const downsampled = lttbDownsample(rawPoints, sampledMax).map((point) => ({
         lat: point.payload.lat,
         lng: point.payload.lng,
         distNorm: point.payload.distNorm / Math.max(maxDistance, 1),
@@ -94,7 +95,7 @@ export function LusakaParticleSwarm({ active }: { active: boolean }) {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [density]);
 
   const geometry = useMemo(() => {
     const positions = new Float32Array(particles.length * 3);
@@ -194,3 +195,6 @@ export function LusakaParticleSwarm({ active }: { active: boolean }) {
     </points>
   );
 }
+
+
+

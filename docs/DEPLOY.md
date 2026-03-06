@@ -20,7 +20,7 @@ Reference for initial setup and for checking that everything is wired correctly.
 
 Optional: run `vercel env pull .env.development.local` to sync local env with Vercel (overwrites `.env.development.local`).
 
-**Vercel env — what this app uses:** The app only reads `NEXT_PUBLIC_SUPABASE_URL` (or `SUPABASE_URL`), `NEXT_PUBLIC_SUPABASE_ANON_KEY` (or `SUPABASE_ANON_KEY`), `SUPABASE_SERVICE_ROLE_KEY`, and `DISABLE_PWA`. You have all of these set; the other vars (`POSTGRES_*`, `SUPABASE_PUBLISHABLE_KEY`, etc.) are from Supabase integration and are optional for this app. No changes needed.
+**Vercel env — what this app uses:** The app reads `NEXT_PUBLIC_SUPABASE_URL` (or `SUPABASE_URL`), `NEXT_PUBLIC_SUPABASE_ANON_KEY` (or `SUPABASE_ANON_KEY`), `SUPABASE_SERVICE_ROLE_KEY`, `MODERATION_API_TOKEN`, `NOMINATIM_CONTACT_EMAIL`, and `DISABLE_PWA`. The other vars (`POSTGRES_*`, `SUPABASE_PUBLISHABLE_KEY`, etc.) are from Supabase integration and are optional for this app.
 
 ---
 
@@ -121,6 +121,7 @@ Choose the existing Vercel project (or create one and link it).
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY`| Supabase anon key        | Production, Preview, Development |
 | `SUPABASE_SERVICE_ROLE_KEY`    | Supabase service_role key | Production, Preview, Development |
 | `MODERATION_API_TOKEN`         | Token for moderation APIs (`/api/moderation/review`, `/api/moderation/queue`) | Production, Preview, Development |
+| `NOMINATIM_CONTACT_EMAIL`     | Contact email used by `/api/geocode` in Nominatim headers | Production, Preview, Development |
 
 Mark `SUPABASE_SERVICE_ROLE_KEY` as **Sensitive**.
 
@@ -167,6 +168,9 @@ If the project was created without a Git repo:
 | Link Vercel       | `vercel link` (already linked if deployed) |
 | Pull Vercel env  | `vercel env pull .env.development.local` |
 | Add Vercel env    | Dashboard → Settings → Environment Variables — confirm same as `.env.local` |
+
+
+
 
 
 

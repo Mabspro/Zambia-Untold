@@ -41,10 +41,8 @@ export function TimeScrubber({
           label={formatScrubberLabel(year)}
           leftPercent={positionPercent}
         />
-        {/* Core track line */}
         <div className="absolute left-0 right-0 h-[2px] rounded bg-zinc-800" />
-        {/* Glowing active progress line */}
-        <div 
+        <div
           className="absolute left-0 h-[2px] rounded bg-gradient-to-r from-copper/20 to-copperSoft shadow-[0_0_10px_#B87333]"
           style={{ width: `${positionPercent}%` }}
         />
@@ -57,12 +55,11 @@ export function TimeScrubber({
           onChange={(event) =>
             onYearChange(sliderToYear(Number(event.target.value)))
           }
-          className="time-slider absolute inset-0 w-full cursor-col-resize appearance-none bg-transparent opacity-0 z-10"
+          className="time-slider touch-target-scrubber w-full cursor-col-resize appearance-none bg-transparent opacity-0 z-10"
           aria-label="Deep time timeline scrubber"
         />
 
-        {/* The active draggable 'thumb' UI overlaid */}
-        <div 
+        <div
           className="pointer-events-none absolute h-5 w-5 -translate-x-1/2 rounded-full border border-copper bg-panel shadow-[0_0_15px_rgba(200,133,26,0.6)] flex items-center justify-center transition-transform"
           style={{ left: `${positionPercent}%` }}
         >
@@ -82,7 +79,7 @@ export function TimeScrubber({
                 style={{
                   left: `${yearToScrubberPosition(marker.epoch)}%`,
                   backgroundColor: marker.color,
-                  opacity: active ? 1 : 0.4,
+                  opacity: active ? 1 : 0.65,
                   boxShadow: active
                     ? `0 0 16px ${marker.color}, 0 0 4px ${marker.color}`
                     : "none",
@@ -93,7 +90,7 @@ export function TimeScrubber({
           })}
         </div>
       </div>
-      <div className="font-mono flex justify-between pt-1 text-[10px] uppercase tracking-[0.2em] text-muted/90 md:text-[11px]">
+      <div className="font-mono flex justify-between pt-1 text-[11px] uppercase tracking-[0.2em] text-muted/90 md:text-[11px]">
         <span>4.5B BC</span>
         <span>2026 AD</span>
       </div>
