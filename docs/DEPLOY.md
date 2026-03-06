@@ -120,6 +120,7 @@ Choose the existing Vercel project (or create one and link it).
 | `NEXT_PUBLIC_SUPABASE_URL`     | Your Supabase project URL | Production, Preview, Development |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY`| Supabase anon key        | Production, Preview, Development |
 | `SUPABASE_SERVICE_ROLE_KEY`    | Supabase service_role key | Production, Preview, Development |
+| `MODERATION_API_TOKEN`         | Token for moderation APIs (`/api/moderation/review`, `/api/moderation/queue`) | Production, Preview, Development |
 
 Mark `SUPABASE_SERVICE_ROLE_KEY` as **Sensitive**.
 
@@ -166,3 +167,6 @@ If the project was created without a Git repo:
 | Link Vercel       | `vercel link` (already linked if deployed) |
 | Pull Vercel env  | `vercel env pull .env.development.local` |
 | Add Vercel env    | Dashboard → Settings → Environment Variables — confirm same as `.env.local` |
+
+
+

@@ -18,6 +18,7 @@ import { SovereigntyStack } from "@/components/UI/SovereigntyStack";
 import { StoryCompass } from "@/components/UI/StoryCompass";
 import { SpaceSignal } from "@/components/UI/SpaceSignal";
 import { SpaceMissionBuilder } from "@/components/UI/SpaceMissionBuilder";
+import { ModerationConsole } from "@/components/UI/ModerationConsole";
 import { NkolosoCinematic } from "@/components/UI/NkolosoCinematic";
 import { GuidedTourHints } from "@/components/UI/GuidedTourHints";
 import { TerminalText } from "@/components/UI/TerminalText";
@@ -53,7 +54,15 @@ const TOUR_STORAGE_KEY = "zambia-untold:guided-tour-seen";
 const TOTAL_GALLERIES = 8;
 
 type LobbyPhase = "preload" | "globe" | "thesis" | "ui" | "pulse" | "done";
-type ActivePanel = null | "calendar" | "folkTales" | "contribute" | "deepTime" | "villageSearch" | "spaceMission";
+type ActivePanel =
+  | null
+  | "calendar"
+  | "folkTales"
+  | "contribute"
+  | "deepTime"
+  | "villageSearch"
+  | "spaceMission"
+  | "moderation";
 
 export default function HomePage() {
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
@@ -312,7 +321,7 @@ export default function HomePage() {
   const guidedHeaderBottom = headerBottom + (layersExpanded ? 40 : 12);
 
   return (
-    <main className="relative isolate h-screen w-screen overflow-hidden" style={{ backgroundColor: "#030405" }}>
+    <main className="relative isolate h-full min-h-screen w-full max-w-full overflow-x-hidden overflow-y-hidden" style={{ backgroundColor: "#030405" }}>
       {(lobbyPhase === "preload" || lobbyPhase === "globe") && (
         <PreloadScreen visible={lobbyPhase === "preload"} />
       )}
@@ -374,14 +383,15 @@ export default function HomePage() {
 
       {/* Header: Title + Time Navigation — single card to avoid stacked look */}
       <header
-        className={`absolute z-30 flex flex-col items-center gap-0 px-3 transition-opacity duration-700 md:items-start md:px-0 ${showUI ? "opacity-100" : "opacity-0"}`}
+        className={`absolute z-30 flex flex-col items-center justify-center gap-0 transition-opacity duration-700 md:justify-start md:items-start md:px-0 ${showUI ? "opacity-100" : "opacity-0"}`}
         style={{
           top: headerTop,
-          left: safe.isDesktop ? headerSideInset : 0,
-          right: safe.isDesktop ? "auto" : 0,
+          ...(safe.isDesktop
+            ? { left: headerSideInset, right: "auto" }
+            : { left: safe.sideInset, right: safe.sideInset }),
         }}
       >
-        <div ref={headerCardRef} className="museum-card pointer-events-auto w-full max-w-[92vw] overflow-hidden rounded border border-copper/25 bg-bg/70 backdrop-blur-sm md:w-auto md:max-w-none">
+        <div ref={headerCardRef} className="museum-card pointer-events-auto w-full max-w-[min(92vw,420px)] overflow-hidden rounded border border-copper/25 bg-bg/70 backdrop-blur-sm md:w-auto md:max-w-none">
           <div className={`text-center md:text-left ${safe.compact ? "px-3 py-2" : "px-4 py-2.5 md:px-4 md:py-3"}`}>
             <p className={`font-display tracking-[0.2em] text-copper ${safe.compact ? "text-lg" : "text-xl md:text-2xl lg:text-3xl"}`}>
               ZAMBIA UNTOLD
@@ -421,7 +431,7 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Skip intro button */}
+      {/* Skip intro button — fixed at bottom so placement matches tour panel; label confirms latest bundle */}
       {lobbyPhase !== "done" && (
         <button
           type="button"
@@ -432,9 +442,10 @@ export default function HomePage() {
               window.sessionStorage.setItem(LOBBY_STORAGE_KEY, "1");
             }
           }}
-          style={{ top: safe.topInset + 4, right: safe.sideInset }} className="absolute z-50 rounded border border-copper/35 bg-bg/70 px-3 py-1.5 text-[10px] uppercase tracking-[0.16em] text-copperSoft backdrop-blur hover:border-copper"
+          style={{ bottom: safe.actionBottom, left: "50%", transform: "translateX(-50%)", top: "auto" }}
+          className="fixed z-50 rounded border border-copper/35 bg-bg/70 px-3 py-1.5 text-[10px] uppercase tracking-[0.16em] text-copperSoft backdrop-blur hover:border-copper"
         >
-          Skip Intro
+          SKIP BRIEFING · BOTTOM
         </button>
       )}
 
@@ -460,7 +471,13 @@ export default function HomePage() {
           ══════════════════════════════════════════════════════ */}
       {showUI && (
         <nav
-          style={{ bottom: safe.actionBottom }} className="absolute left-1/2 z-30 -translate-x-1/2 flex max-w-[92vw] items-center gap-1.5 overflow-x-auto whitespace-nowrap rounded-lg border border-copper/30 bg-bg/85 px-4 py-2.5 backdrop-blur-md shadow-glow"
+          style={{
+            bottom: safe.actionBottom,
+            ...(safe.isDesktop
+              ? { left: "50%", transform: "translateX(-50%)", maxWidth: "min(92vw, 520px)" }
+              : { left: safe.sideInset, right: safe.sideInset }),
+          }}
+          className="absolute z-30 flex items-center justify-center gap-1.5 overflow-x-auto whitespace-nowrap rounded-lg border border-copper/30 bg-bg/85 px-4 py-2.5 backdrop-blur-md shadow-glow md:justify-start"
         >
           {/* Breathing indicator — implies a living system */}
           <div className="mr-1 h-1.5 w-1.5 rounded-full bg-copper/60 animate-[breathing_3s_ease-in-out_infinite]" />
@@ -561,6 +578,24 @@ export default function HomePage() {
               Community archive
             </span>
           </div>
+          {/* Moderation */}
+          <div className="group relative">
+            <button
+              type="button"
+              onClick={() => openPanel(activePanel === "moderation" ? null : "moderation")}
+              className={`flex items-center gap-1 rounded px-2 py-1.5 text-[10px] uppercase tracking-[0.12em] transition-all duration-200 md:gap-1.5 md:px-3 md:py-2 md:text-[11px] md:tracking-[0.14em] ${
+                activePanel === "moderation"
+                  ? "bg-copper/20 text-copper border border-copper/40 shadow-[0_0_8px_rgba(184,115,51,0.2)]"
+                  : "text-copperSoft hover:text-copper hover:bg-copper/8 border border-transparent hover:border-copper/25 hover:shadow-[0_0_6px_rgba(184,115,51,0.15)]"
+              }`}
+            >
+              <span className="text-sm">🛡</span>
+              <span className="hidden sm:inline">Review</span>
+            </button>
+            <span className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 rounded bg-panel/95 border border-copper/20 px-2 py-0.5 text-[9px] text-muted opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+              Moderation queue
+            </span>
+          </div>
 
           {/* Breathing indicator — right side */}
           <div className="ml-1 h-1.5 w-1.5 rounded-full bg-copper/60 animate-[breathing_3s_ease-in-out_infinite_1.5s]" />
@@ -612,6 +647,7 @@ export default function HomePage() {
           enabled={layerVisibility.space !== false}
           earthObservationEnabled={layerVisibility.earthObservation !== false}
           onOpenMissionBuilder={() => openPanel("spaceMission")}
+          guidedTourActive={showGuidedTour}
         />
       )}
 
@@ -651,6 +687,7 @@ export default function HomePage() {
             topInset: safe.topInset,
             bottomInset: safe.bottomInset,
             headerBottom: guidedHeaderBottom,
+            actionBottom: safe.actionBottom,
           }}
         />
       )}
@@ -707,6 +744,12 @@ export default function HomePage() {
             onClose={() => setActivePanel(null)}
           />
         )}
+        {activePanel === "moderation" && (
+          <ModerationConsole
+            key="moderation"
+            onClose={() => setActivePanel(null)}
+          />
+        )}
         {activePanel === "contribute" && (
           <ContributionForm
             key="contribute"
@@ -721,6 +764,15 @@ export default function HomePage() {
     </main>
   );
 }
+
+
+
+
+
+
+
+
+
 
 
 

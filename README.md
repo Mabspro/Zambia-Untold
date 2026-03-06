@@ -239,3 +239,60 @@ Recommended workflow for every UI/system change:
 2. Tune LOD thresholds with production-size datasets.
 3. Add admin moderation queue surfaces (pending/rejected) and review actions.
 4. Resolve local worker-spawn permission issue blocking production build.
+
+## Progress Update (March 2026 - C2.6 Ops/Readability Pass)
+
+### Completed in this pass
+- Added moderation stats endpoint:
+  - `/api/moderation/stats` returns pending/rejected/approved counts for community + mission queues.
+- Added deterministic live-satellite declutter:
+  - Zoom-aware clustering/thinning in `LiveSatelliteLayer` to reduce bubble noise at wide zoom.
+- Expanded Space Signal telemetry:
+  - Added moderation queue stats block (counts only, no raw pending content exposure).
+
+### Validation
+- `npm run typecheck` passes.
+- `npm run lint` passes.
+- `npm run build` still fails in this environment with `spawn EPERM`.
+
+## Progress Update (March 2026 - C2.7 Moderation Controls + Mobile Telemetry)
+
+### Completed in this pass
+- Added moderation action endpoint:
+  - `/api/moderation/review` (POST) to set `pending|approved|rejected` for community or mission records.
+  - Endpoint is gated by `MODERATION_API_TOKEN` (header `x-moderation-token` or bearer token).
+- Added compact mobile `Space Signal` mode:
+  - Core ISS/satellite/archive/queue telemetry now visible on mobile (`md:hidden` compact panel).
+- Added environment/deploy docs for moderation token:
+  - `.env.example`
+  - `docs/DEPLOY.md`
+
+### Validation
+- `npm run typecheck` passes.
+- `npm run lint` passes.
+- `npm run build` still fails in this environment with `spawn EPERM`.
+
+## Progress Update (March 2026 - C2.8 Moderation Operator Console)
+
+### Completed in this pass
+- Added token-gated moderation queue read endpoint:
+  - `/api/moderation/queue` (GET) with `target=community|mission` and `status=pending|rejected|approved`.
+  - Endpoint requires `MODERATION_API_TOKEN` via `x-moderation-token` or bearer token.
+- Added in-app moderation operator panel:
+  - New `Review` action in the bottom rail opens `ModerationConsole`.
+  - Queue filters for Isibalo vs Missions and Pending vs Rejected.
+  - Approve / Reject / Reset actions call `/api/moderation/review` directly.
+  - Token is stored in `sessionStorage` for the active session only.
+- Preserved one-panel-at-a-time invariant:
+  - `Review` uses existing `openPanel()` exclusivity behavior.
+
+### Validation
+- `npm run typecheck` passes.
+- `npm run lint` passes.
+- `npm run build` still fails in this environment with `spawn EPERM`.
+
+### Next
+1. Replace shared token flow with role-based auth (Supabase Auth / operator role).
+2. Add reviewer notes and audit fields (`reviewed_by`, `reviewed_at`, `reviewer_notes`) on moderation updates.
+3. Add pagination and search to moderation queue once records exceed 100.
+4. Resolve local worker-spawn permission issue blocking production build.

@@ -46,12 +46,8 @@ function computeSafeLayout(width: number, height: number): ViewportSafeLayout {
 }
 
 export function useViewportSafeLayout(): ViewportSafeLayout {
-  const [layout, setLayout] = useState<ViewportSafeLayout>(() => {
-    if (typeof window === "undefined") {
-      return computeSafeLayout(1366, 768);
-    }
-    return computeSafeLayout(window.innerWidth, window.innerHeight);
-  });
+  // Keep the first client render identical to SSR to prevent hydration mismatches.
+  const [layout, setLayout] = useState<ViewportSafeLayout>(() => computeSafeLayout(1366, 768));
 
   useEffect(() => {
     const onResize = () => {
@@ -65,3 +61,5 @@ export function useViewportSafeLayout(): ViewportSafeLayout {
 
   return layout;
 }
+
+

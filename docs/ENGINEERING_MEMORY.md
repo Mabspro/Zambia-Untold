@@ -83,3 +83,76 @@ Use this file as a lightweight continuity layer to reduce regressions across par
 - Follow-ups:
   - Add deterministic clustering for satellites as count grows > 100
   - Add admin moderation queue surface (pending/rejected lists)
+
+## 2026-03-05 - Satellite Clustering + Moderation Stats API
+
+- Date: 2026-03-05
+- Area: Live satellite readability, moderation operations visibility
+- Intent: Add deterministic zoom-aware clustering for live satellites and expose moderation queue counts without leaking raw pending content
+- Invariants touched:
+  - Data/source transparency (live vs fallback)
+  - Overlay readability across zoom ranges
+- Files changed:
+  - `components/Globe/Globe.tsx`
+  - `components/UI/SpaceSignal.tsx`
+  - `lib/server/supabase.ts`
+  - `app/api/moderation/stats/route.ts`
+- Risk:
+  - Cluster thresholds may require field tuning once live orbital sample size increases
+- Regression checks run:
+  - typecheck pass
+  - lint pass
+  - build still blocked by local `spawn EPERM`
+- Follow-ups:
+  - Add restricted moderation action endpoints (approve/reject) with auth gate
+  - Add mobile-specific condensed telemetry mode for Space Signal
+
+## 2026-03-05 - Moderation Action API + Mobile Space Signal
+
+- Date: 2026-03-05
+- Area: Moderation controls, mobile telemetry accessibility
+- Intent: Add token-gated moderation status updates and expose core Space Signal telemetry on mobile screens
+- Invariants touched:
+  - Server-side moderation writes require explicit auth token
+  - Mobile UI keeps overlays concise and non-blocking
+- Files changed:
+  - `app/api/moderation/review/route.ts`
+  - `lib/server/supabase.ts`
+  - `components/UI/SpaceSignal.tsx`
+  - `.env.example`
+  - `docs/DEPLOY.md`
+- Risk:
+  - Misconfigured `MODERATION_API_TOKEN` will block moderation updates by design
+- Regression checks run:
+  - typecheck pass
+  - lint pass
+  - build still blocked by local `spawn EPERM`
+- Follow-ups:
+  - Add real auth/role integration (Supabase Auth or platform SSO) in place of shared token
+  - Add moderation operator UI controls that call `/api/moderation/review`
+
+## 2026-03-05 - Moderation Queue API + In-App Operator Console
+
+- Date: 2026-03-05
+- Area: Moderation operations workflow
+- Intent: Close the loop from moderation telemetry to actionable in-app approve/reject controls
+- Invariants touched:
+  - One-panel-at-a-time overlay behavior (`openPanel` exclusivity)
+  - Token-gated moderation actions (no unauthenticated queue or status updates)
+  - Mobile/desktop panel behavior consistency
+- Files changed:
+  - `app/api/moderation/queue/route.ts`
+  - `components/UI/ModerationConsole.tsx`
+  - `app/page.tsx`
+  - `docs/DEPLOY.md`
+  - `README.md`
+- Risk:
+  - Shared token in client session storage is practical but not role-scoped; requires migration to auth-backed roles
+- Regression checks run:
+  - typecheck pass
+  - lint pass
+  - build still blocked by local `spawn EPERM`
+- Follow-ups:
+  - Replace shared token with role-based auth + server-side identity checks
+  - Persist reviewer metadata (`reviewed_by`, `reviewed_at`, `reviewer_notes`)
+  - Add queue pagination/search and batch actions for scale

@@ -12,6 +12,7 @@ type GuidedTourLayout = {
   topInset: number;
   bottomInset: number;
   headerBottom: number;
+  actionBottom: number;
 };
 
 const TOUR_STEP_TIMEOUT_MS = 15000;
@@ -19,9 +20,9 @@ const TOUR_STEP_TIMEOUT_MS = 15000;
 type Step = 1 | 2 | 3 | 4;
 
 const STEPS: Record<Step, string> = {
-  1: "> SYSTEM INITIALIZED.\n  900 million years of Zambian substrate detected.\n  Drag globe to begin.",
-  2: "> TEMPORAL AXIS ACTIVE.\n  476,000 BC -> 2026 AD.\n  Move scrubber to travel through time.",
-  3: "> 6 HISTORICAL NODES IDENTIFIED.\n  Select any glowing marker\n  to open its intelligence file.",
+  1: "> PROTOCOL SYNC I: TEMPORAL ORIENTATION.\n  Archive coordinates locked.\n  Drag globe to begin calibration.",
+  2: "> PROTOCOL SYNC II: SOVEREIGNTY STACK.\n  Move time to inspect governance,\n  value flow, and infrastructure.",
+  3: "> PROTOCOL SYNC III: LIVING CONNECTION.\n  Select a marker to open its file,\n  then use SEARCH to locate your village.",
   4: "> BRIEFING COMPLETE.\n  You are inside the museum now.",
 };
 
@@ -112,20 +113,16 @@ export function GuidedTourHints({
 
   if (!active) return null;
 
-  const panelStyle: React.CSSProperties = layout.isDesktop
-    ? {
-        left: "50%",
-        transform: "translateX(-50%)",
-        top: Math.max(layout.topInset + 12, 76),
-        width: Math.min(420, layout.width - layout.sideInset * 2),
-        maxWidth: `calc(100vw - ${layout.sideInset * 2}px)`,
-      }
-    : {
-        left: layout.sideInset,
-        right: layout.sideInset,
-        top: step === 2 ? Math.min(layout.headerBottom + 8, layout.height - 220) : undefined,
-        bottom: step === 2 ? undefined : Math.max(layout.bottomInset + 84, 102),
-      };
+  const panelStyle: React.CSSProperties = {
+    position: "fixed",
+    top: "auto",
+    left: layout.sideInset,
+    right: layout.sideInset,
+    width: "auto",
+    maxWidth: 460,
+    transform: "none",
+    bottom: Math.max(layout.actionBottom + 72, layout.bottomInset + 96),
+  };
 
   return (
     <div
@@ -141,12 +138,12 @@ export function GuidedTourHints({
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.24 }}
           style={panelStyle}
-          className="terminal-panel pointer-events-auto absolute border border-[rgba(184,115,51,0.3)] bg-[#0A0806]/95 px-4 py-3"
+          className="terminal-panel pointer-events-auto fixed !top-auto border border-[rgba(184,115,51,0.3)] bg-[#0A0806]/95 px-3 py-2.5 md:px-4 md:py-3"
         >
           <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#7A6550]">ZAMBIA UNTOLD · SYSTEM v1.0</p>
           <div className="mt-1 border-t border-copper/30" />
 
-          <div className="mt-2 min-h-[74px] font-mono text-[11px] leading-[1.5] text-[#B87333] md:text-[12px]">
+          <div className="mt-2 min-h-[62px] font-mono text-[11px] leading-[1.45] text-[#B87333] md:min-h-[74px] md:text-[12px]">
             <TerminalText
               key={`tour-${step}`}
               text={STEPS[step]}
@@ -169,7 +166,7 @@ export function GuidedTourHints({
               onClick={handleSkip}
               className="font-mono border border-copper/35 px-2 py-1 text-[10px] uppercase tracking-[0.12em] text-[#B87333] hover:border-copper hover:text-[#d49752]"
             >
-              SKIP BRIEFING
+              SKIP BRIEFING · BOTTOM
             </button>
           </div>
         </motion.div>
@@ -177,9 +174,6 @@ export function GuidedTourHints({
     </div>
   );
 }
-
-
-
 
 
 
