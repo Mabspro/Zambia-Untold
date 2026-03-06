@@ -65,6 +65,7 @@ const REENTRY_PROMPT_KEY = "zambia-untold:reentry-prompt-shown";
 const TOUR_STORAGE_KEY = "zambia-untold:guided-tour-seen";
 const LOW_FI_STORAGE_KEY = "zambia-untold:low-fi-mode";
 const LOW_FI_PROMPT_SEEN_KEY = "zambia-untold:low-fi-prompt-seen";
+const LAYERS_STORAGE_KEY = "zambia-untold:layer-visibility";
 const TOTAL_GALLERIES = 8;
 
 type LobbyPhase = "preload" | "globe" | "thesis" | "ui" | "pulse" | "done";
@@ -192,6 +193,22 @@ export default function HomePage() {
     if (savedMissionProgress) setMissionProgress(savedMissionProgress);
     setGuidedTourCompleted(hasSeenGuidedTour);
     setLowFiMode(window.localStorage.getItem(LOW_FI_STORAGE_KEY) === "1");
+    const savedLayersRaw = window.localStorage.getItem(LAYERS_STORAGE_KEY);
+    if (savedLayersRaw) {
+      try {
+        const parsed = JSON.parse(savedLayersRaw) as Partial<LayerVisibility>;
+        const hydratedLayers: LayerVisibility = { ...DEFAULT_LAYERS, ...parsed };
+        prevLayerRef.current = hydratedLayers;
+        setLayerVisibility(hydratedLayers);
+      } catch {
+        // Ignore malformed local data and keep defaults.
+      }
+    } else if (window.innerWidth >= 768) {
+      // Desktop first-run default: keep satellites visible unless user opts out.
+      const desktopLayers: LayerVisibility = { ...DEFAULT_LAYERS, liveSatellites: true };
+      prevLayerRef.current = desktopLayers;
+      setLayerVisibility(desktopLayers);
+    }
 
     if (passport) {
       setScrubYear(passport.lastYear);
@@ -229,6 +246,10 @@ export default function HomePage() {
       window.localStorage.setItem(LOW_FI_STORAGE_KEY, lowFiMode ? "1" : "0");
     }
   }, [lowFiMode]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(LAYERS_STORAGE_KEY, JSON.stringify(layerVisibility));
+  }, [layerVisibility]);
   useEffect(() => {
     if (lobbyPhase !== "preload") return;
     const t = setTimeout(() => setLobbyPhase("globe"), 3800);
@@ -984,6 +1005,13 @@ export default function HomePage() {
     </main>
   );
 }
+
+
+
+
+
+
+
 
 
 
