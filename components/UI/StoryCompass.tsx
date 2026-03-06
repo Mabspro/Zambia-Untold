@@ -67,13 +67,14 @@ export function StoryCompass({
     // Positioned below the header on desktop, above the action bar on mobile.
     // text-muted/50 = half opacity of the muted token — a whisper.
     <div
-      className="pointer-events-none fixed bottom-[4.5rem] left-1/2 z-20 -translate-x-1/2 md:bottom-auto md:top-7 md:left-auto md:right-8 md:translate-x-0"
+      className="pointer-events-none fixed bottom-[4.5rem] left-1/2 z-20 w-[min(92vw,460px)] -translate-x-1/2 px-2 md:bottom-auto md:top-7 md:left-auto md:right-5 md:w-[min(42vw,460px)] md:translate-x-0 md:px-0"
       aria-live="polite"
       aria-label="Current exhibit context"
     >
-      <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted/50">
+      <p className="block truncate text-center font-mono text-[9px] uppercase tracking-[0.18em] text-muted/50 md:text-right">
         {label}
       </p>
     </div>
   );
 }
+

@@ -10,9 +10,11 @@ import {
 type TimeButtonsProps = {
   year: number;
   onYearChange: (year: number) => void;
+  /** When true, no border/background (e.g. inside header card). */
+  embedded?: boolean;
 };
 
-export function TimeButtons({ year, onYearChange }: TimeButtonsProps) {
+export function TimeButtons({ year, onYearChange, embedded }: TimeButtonsProps) {
   const zones = getZonesForNavigation();
   const currentZone = getZoneForYear(year);
   const currentIndex = zones.findIndex((z) => z.zone === currentZone);
@@ -33,7 +35,11 @@ export function TimeButtons({ year, onYearChange }: TimeButtonsProps) {
   const hasNext = currentIndex < zones.length - 1;
 
   return (
-    <div className="pointer-events-auto flex w-full max-w-[92vw] items-center justify-center gap-2 rounded border border-copper/25 bg-bg/70 px-3 py-2 backdrop-blur-sm md:w-auto md:max-w-none">
+    <div
+      className={`pointer-events-auto flex w-full max-w-[92vw] items-center justify-center gap-2 rounded px-3 py-2 md:w-auto md:max-w-none md:py-2 ${
+        embedded ? "border-0 bg-transparent backdrop-blur-none" : "border border-copper/25 bg-bg/70 backdrop-blur-sm"
+      }`}
+    >
       {/* Prev era */}
       <button
         type="button"

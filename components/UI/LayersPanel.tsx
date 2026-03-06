@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 export type { LayerVisibility } from "@/lib/types";
 import type { LayerVisibility } from "@/lib/types";
 import type { DeepTimeZone } from "@/lib/deepTime";
@@ -37,6 +37,8 @@ const HUMAN_TIME_ERAS: EraItem[] = [
 ];
 
 type LayersPanelProps = {
+  positionStyle?: CSSProperties;
+  contentMaxHeight?: string;
   visibility: LayerVisibility;
   onVisibilityChange: (v: LayerVisibility) => void;
   onEraSelect?: (year: number) => void;
@@ -47,6 +49,8 @@ type LayersPanelProps = {
 };
 
 export function LayersPanel({
+  positionStyle,
+  contentMaxHeight,
   visibility,
   onVisibilityChange,
   onEraSelect,
@@ -91,7 +95,7 @@ export function LayersPanel({
   );
 
   return (
-    <aside className="pointer-events-auto absolute z-40 hidden rounded border border-copper/30 bg-bg/90 backdrop-blur-xl md:left-7 md:top-52 md:block md:w-[270px]">
+    <aside style={positionStyle} className="pointer-events-auto absolute z-50 rounded border border-copper/30 bg-bg/90 backdrop-blur-xl">
       <button
         type="button"
         onClick={() => {
@@ -106,7 +110,7 @@ export function LayersPanel({
       </button>
 
       {!collapsed && (
-        <div className="space-y-1 border-t border-copper/20 px-4 py-3">
+        <div style={{ maxHeight: contentMaxHeight }} className="overflow-y-auto space-y-1 border-t border-copper/20 px-4 py-3">
           <p className="mb-2 font-display text-[10px] uppercase tracking-[0.22em] text-copper/60">Era Jump</p>
           {DEEP_TIME_ERAS.map(renderEraRow)}
 
@@ -176,3 +180,13 @@ export function LayersPanel({
     </aside>
   );
 }
+
+
+
+
+
+
+
+
+
+

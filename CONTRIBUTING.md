@@ -87,3 +87,4 @@ Open [http://localhost:3000](http://localhost:3000). The scrubber controls time;
 - Run `npm run validate` (typecheck + lint + build)
 - Ensure new markers appear at the correct epoch on the scrubber
 - Verify Evidence tab shows sources correctly
+- See **`docs/DEVELOPMENT_GUIDELINES.md`** for regression-prevention rules, critical invariants, and pre-merge checklist (lobby, guided tour, header, Supabase, etc.)

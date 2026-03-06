@@ -24,6 +24,17 @@ export function GlobeMarker({ marker, active, onClick }: GlobeMarkerProps) {
     [marker.coordinates.lat, marker.coordinates.lng]
   );
 
+  const ringOrientation = useMemo(() => {
+    const v = new THREE.Vector3(
+      position[0] as number,
+      position[1] as number,
+      position[2] as number
+    ).normalize();
+    const q = new THREE.Quaternion();
+    q.setFromUnitVectors(new THREE.Vector3(0, 0, 1), v);
+    return q;
+  }, [position]);
+
   useFrame(({ clock }) => {
     if (!meshRef.current) return;
     const t = clock.getElapsedTime();
@@ -67,13 +78,29 @@ export function GlobeMarker({ marker, active, onClick }: GlobeMarkerProps) {
         document.body.style.cursor = "auto";
       }}
     >
+      {/* Hover ring — visible only on hover; tangent to globe so folks know it's clickable */}
+      {hovered && (
+        <group quaternion={ringOrientation}>
+          <mesh>
+            <ringGeometry args={[0.048, 0.062, 24]} />
+            <meshBasicMaterial
+              color={displayColor}
+              transparent
+              opacity={0.6}
+              depthWrite={false}
+              blending={THREE.AdditiveBlending}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
+        </group>
+      )}
       {/* Outer Glow Halo — large, bright, unmissable */}
       <mesh ref={meshRef}>
         <sphereGeometry args={[0.038, 20, 20]} />
         <meshBasicMaterial
           color={displayColor}
           transparent
-          opacity={active ? 0.7 : 0.35}
+          opacity={active ? 0.7 : hovered ? 0.55 : 0.35}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
@@ -83,9 +110,9 @@ export function GlobeMarker({ marker, active, onClick }: GlobeMarkerProps) {
           <meshStandardMaterial
             color={displayColor}
             emissive={displayColor}
-            emissiveIntensity={active ? 8 : 3.5}
+            emissiveIntensity={active ? 8 : hovered ? 5 : 3.5}
             transparent
-            opacity={active ? 1 : 0.85}
+            opacity={active ? 1 : hovered ? 0.95 : 0.85}
           />
         </mesh>
       </mesh>

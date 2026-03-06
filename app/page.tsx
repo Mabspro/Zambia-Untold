@@ -19,9 +19,12 @@ import { StoryCompass } from "@/components/UI/StoryCompass";
 import { SpaceSignal } from "@/components/UI/SpaceSignal";
 import { SpaceMissionBuilder } from "@/components/UI/SpaceMissionBuilder";
 import { NkolosoCinematic } from "@/components/UI/NkolosoCinematic";
+import { GuidedTourHints } from "@/components/UI/GuidedTourHints";
+import { TerminalText } from "@/components/UI/TerminalText";
 import { MARKERS } from "@/data/markers";
 import { DEEP_TIME_MAX, formatZoneForDisplay, getZoneForYear, type DeepTimeZone } from "@/lib/deepTime";
 import { loadMuseumPassport, saveMuseumPassport } from "@/lib/museumPassport";
+import { useViewportSafeLayout } from "@/lib/ui/safeLayout";
 
 const Globe = dynamic(() => import("@/components/Globe/Globe").then((m) => m.Globe), {
   ssr: false,
@@ -46,6 +49,7 @@ const DEFAULT_LAYERS: LayerVisibility = {
 
 const LOBBY_STORAGE_KEY = "zambia-untold:lobby-seen";
 const REENTRY_PROMPT_KEY = "zambia-untold:reentry-prompt-shown";
+const TOUR_STORAGE_KEY = "zambia-untold:guided-tour-seen";
 const TOTAL_GALLERIES = 8;
 
 type LobbyPhase = "preload" | "globe" | "thesis" | "ui" | "pulse" | "done";
@@ -67,8 +71,15 @@ export default function HomePage() {
   const [flyToPin, setFlyToPin] = useState<{ lat: number; lng: number; placeName?: string } | null>(null);
   const [layersExpanded, setLayersExpanded] = useState(false);
   const [showNkolosoCinematic, setShowNkolosoCinematic] = useState(false);
+  const [hasUserDraggedGlobe, setHasUserDraggedGlobe] = useState(false);
+  const [hasUserMovedScrubber, setHasUserMovedScrubber] = useState(false);
+  const [showGuidedTour, setShowGuidedTour] = useState(false);
+  const [thesisTypedDone, setThesisTypedDone] = useState(false);
   const didBootRef = useRef(false);
+  const headerCardRef = useRef<HTMLDivElement | null>(null);
+  const [headerHeight, setHeaderHeight] = useState(210);
   const lobbyTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const safe = useViewportSafeLayout();
 
   /**
    * openPanel — enforces one-panel-at-a-time rule at the state level.
@@ -80,16 +91,52 @@ export default function HomePage() {
     if (panel !== null) {
       setSelectedMarkerId(null);
       setContextualCardDismissed(true);
-          setShowNkolosoCinematic(false);
-        }
-  }, []);
+      setShowNkolosoCinematic(false);
+    }
+  }, [])
+  useEffect(() => {
+    const node = headerCardRef.current;
+    if (!node || typeof ResizeObserver === "undefined") return;
 
+    const observer = new ResizeObserver((entries) => {
+      const next = entries[0]?.contentRect?.height;
+      if (next && Number.isFinite(next)) {
+        setHeaderHeight(Math.ceil(next));
+      }
+    });
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [safe.width, safe.height]);
+
+  const pushLobbyTimer = useCallback((id: ReturnType<typeof setTimeout>) => {
+    lobbyTimersRef.current.push(id);
+  }, []);
   const clearLobbyTimers = useCallback(() => {
     for (const id of lobbyTimersRef.current) {
       clearTimeout(id);
     }
     lobbyTimersRef.current = [];
   }, []);
+
+  const playIntro = useCallback(() => {
+    clearLobbyTimers();
+    if (typeof window !== "undefined") {
+      window.sessionStorage.removeItem(LOBBY_STORAGE_KEY);
+      window.sessionStorage.removeItem(TOUR_STORAGE_KEY);
+    }
+    setLobbyPhase("preload");
+    setShowGuidedTour(false);
+    setHasUserDraggedGlobe(false);
+    setHasUserMovedScrubber(false);
+    setThesisTypedDone(false);
+    setActivePanel(null);
+    setSelectedMarkerId(null);
+    setContextualCardDismissed(true);
+    setShowNkolosoCinematic(false);
+    setReentryZone(null);
+    setLayersExpanded(false);
+  }, [clearLobbyTimers]);
 
   const selectedMarker = useMemo(
     () => MARKERS.find((m) => m.id === selectedMarkerId) ?? null,
@@ -128,12 +175,12 @@ export default function HomePage() {
       document.head.removeChild(link);
     };
   }, []);
-
   useEffect(() => {
     if (lobbyPhase !== "preload") return;
-    const t = setTimeout(() => setLobbyPhase("globe"), 1500);
+    const t = setTimeout(() => setLobbyPhase("globe"), 3800);
+    pushLobbyTimer(t);
     return () => clearTimeout(t);
-  }, [lobbyPhase]);
+  }, [lobbyPhase, pushLobbyTimer]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -154,26 +201,53 @@ export default function HomePage() {
   }, [selectedMarkerId, activePanel]);
 
   useEffect(() => {
-    if (lobbyPhase !== "globe") {
-      clearLobbyTimers();
-      return;
-    }
+    if (lobbyPhase !== "globe") return;
 
-    const t1 = setTimeout(() => setLobbyPhase("thesis"), 1500);
-    const t2 = setTimeout(() => setLobbyPhase("ui"), 3500);
-    const t3 = setTimeout(() => setLobbyPhase("pulse"), 5500);
-    const t4 = setTimeout(() => {
+    const t = setTimeout(() => setLobbyPhase("thesis"), 2600);
+    pushLobbyTimer(t);
+    return () => clearTimeout(t);
+  }, [lobbyPhase, pushLobbyTimer]);
+
+  useEffect(() => {
+    if (lobbyPhase !== "thesis") return;
+    setThesisTypedDone(false);
+  }, [lobbyPhase]);
+
+  useEffect(() => {
+    if (lobbyPhase !== "thesis" || !thesisTypedDone) return;
+
+    const t = setTimeout(() => setLobbyPhase("ui"), 2000);
+    pushLobbyTimer(t);
+    return () => clearTimeout(t);
+  }, [lobbyPhase, thesisTypedDone, pushLobbyTimer]);
+
+  useEffect(() => {
+    if (lobbyPhase !== "ui") return;
+
+    const t = setTimeout(() => setLobbyPhase("pulse"), 1000);
+    pushLobbyTimer(t);
+    return () => clearTimeout(t);
+  }, [lobbyPhase, pushLobbyTimer]);
+
+  useEffect(() => {
+    if (lobbyPhase !== "pulse") return;
+
+    const t = setTimeout(() => {
       setLobbyPhase("done");
       if (typeof window !== "undefined") {
         window.sessionStorage.setItem(LOBBY_STORAGE_KEY, "1");
       }
-    }, 6500);
+    }, 1000);
 
-    lobbyTimersRef.current = [t1, t2, t3, t4];
-    return () => {
-      clearLobbyTimers();
-    };
-  }, [lobbyPhase, clearLobbyTimers]);
+    pushLobbyTimer(t);
+    return () => clearTimeout(t);
+  }, [lobbyPhase, pushLobbyTimer]);
+
+  // Show interaction-driven guided tour when lobby is done and tour not yet seen
+  useEffect(() => {
+    if (lobbyPhase !== "done" || typeof window === "undefined") return;
+    if (!window.sessionStorage.getItem(TOUR_STORAGE_KEY)) setShowGuidedTour(true);
+  }, [lobbyPhase]);
 
   useEffect(() => {
     if (!didBootRef.current) return;
@@ -225,23 +299,30 @@ export default function HomePage() {
 
   const isDone = lobbyPhase === "done";
   const showUI = lobbyPhase === "ui" || isDone;
+  const headerTop = safe.headerTop;
+  const headerSideInset = safe.sideInset;
+  const headerBottom = headerTop + headerHeight;
+  const layersTop = headerBottom + 10;
+  const layersContentMaxHeight = safe.isDesktop
+    ? `calc(100vh - ${Math.max(layersTop + safe.bottomInset + 32, 180)}px)`
+    : `calc(100vh - ${Math.max(layersTop + safe.actionBottom + 110, 220)}px)`;
+  const layersPositionStyle = safe.isDesktop
+    ? { top: layersTop, left: headerSideInset, width: 270 }
+    : { top: layersTop, left: headerSideInset, right: headerSideInset };
+  const guidedHeaderBottom = headerBottom + (layersExpanded ? 40 : 12);
 
   return (
     <main className="relative isolate h-screen w-screen overflow-hidden" style={{ backgroundColor: "#030405" }}>
-      {lobbyPhase === "preload" && <PreloadScreen />}
+      {(lobbyPhase === "preload" || lobbyPhase === "globe") && (
+        <PreloadScreen visible={lobbyPhase === "preload"} />
+      )}
 
       {/* Globe: full viewport, always centered.
           Use instant opacity for return visits (isDone on mount) to prevent
           the warm bg-bg from compositing through the canvas during a CSS
           transition. First-time visitors still get the smooth fade-in. */}
       <CanvasWrapper
-        className={
-          lobbyPhase === "preload"
-            ? "opacity-0"
-            : isDone
-              ? "opacity-100"
-              : "opacity-100 transition-opacity duration-700"
-        }
+        className={`${lobbyPhase === "preload" ? "opacity-0" : isDone ? "opacity-100" : "opacity-100 transition-opacity duration-700"}${safe.isDesktop ? "" : " -translate-y-[2vh]"}`}
       >
         <Globe
           selectedMarker={selectedMarker}
@@ -258,25 +339,26 @@ export default function HomePage() {
           flyToCoordinate={flyToCoordinate}
           flyToPin={flyToPin}
           onFlyToPinExpire={() => setFlyToPin(null)}
+          onUserInteract={() => setHasUserDraggedGlobe(true)}
+          focusAfricaDuringLobby={lobbyPhase !== "done"}
         />
       </CanvasWrapper>
 
-      {/* Thesis line — fades in at 3s */}
-      {(lobbyPhase === "thesis" || lobbyPhase === "ui" || lobbyPhase === "pulse") && (
+            {/* Thesis line — terminal type-in, then hold 2s and fade as UI appears */}
+      {(lobbyPhase === "thesis" || lobbyPhase === "ui") && (
         <div
-          className="pointer-events-none absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 text-center transition-opacity duration-500"
+          className="pointer-events-none absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 text-center transition-opacity duration-700"
           style={{
             opacity: lobbyPhase === "thesis" ? 1 : 0,
           }}
         >
-          <p
-            className="font-display text-lg tracking-[0.24em] text-copper transition-opacity duration-1000 md:text-xl"
-            style={{
-              textShadow: "0 0 24px rgba(0,0,0,0.9), 0 0 48px rgba(0,0,0,0.7), 0 2px 4px rgba(0,0,0,0.8)",
-            }}
-          >
-            <em>Before there were nations, there was a substrate.</em>
-          </p>
+          <TerminalText
+            text="Before there were nations, there was a substrate."
+            speed={45}
+            color="#B87333"
+            className="mx-auto max-w-[88vw] font-mono text-[28px] leading-[1.22] tracking-[0.06em] md:max-w-[70vw] md:text-[36px]"
+            onComplete={() => setThesisTypedDone(true)}
+          />
         </div>
       )}
 
@@ -290,39 +372,57 @@ export default function HomePage() {
         />
       )}
 
-      {/* Header: Title + Time Navigation */}
+      {/* Header: Title + Time Navigation — single card to avoid stacked look */}
       <header
-        className={`absolute left-0 right-0 top-3 z-30 flex flex-col items-center gap-2 px-3 transition-opacity duration-700 md:left-7 md:right-auto md:top-6 md:items-start md:px-0 ${
-          showUI ? "opacity-100" : "opacity-0"
-        }`}
+        className={`absolute z-30 flex flex-col items-center gap-0 px-3 transition-opacity duration-700 md:items-start md:px-0 ${showUI ? "opacity-100" : "opacity-0"}`}
+        style={{
+          top: headerTop,
+          left: safe.isDesktop ? headerSideInset : 0,
+          right: safe.isDesktop ? "auto" : 0,
+        }}
       >
-        <div className="museum-card pointer-events-none w-full max-w-[92vw] rounded border border-copper/25 bg-bg/70 px-4 py-2.5 text-center backdrop-blur-sm md:w-auto md:max-w-none md:px-4 md:py-3 md:text-left">
-          <p className="font-display text-xl tracking-[0.2em] text-copper md:text-2xl lg:text-3xl">
-            ZAMBIA UNTOLD
-          </p>
-          <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-muted md:mt-1.5 md:text-xs lg:text-sm">
-            The history you were never taught
-          </p>
-          <p className="mt-1.5 text-[10px] uppercase tracking-[0.18em] text-copperSoft/90 md:mt-2 md:text-[11px]">
-            Galleries Visited: {visitedZones.length}/{TOTAL_GALLERIES}
-          </p>
-          <p className="mt-1 text-[9px] font-mono uppercase tracking-[0.16em] text-muted/40">
-            Stored locally · No external tracking
-          </p>
+        <div ref={headerCardRef} className="museum-card pointer-events-auto w-full max-w-[92vw] overflow-hidden rounded border border-copper/25 bg-bg/70 backdrop-blur-sm md:w-auto md:max-w-none">
+          <div className={`text-center md:text-left ${safe.compact ? "px-3 py-2" : "px-4 py-2.5 md:px-4 md:py-3"}`}>
+            <p className={`font-display tracking-[0.2em] text-copper ${safe.compact ? "text-lg" : "text-xl md:text-2xl lg:text-3xl"}`}>
+              ZAMBIA UNTOLD
+            </p>
+            <p className={`uppercase tracking-[0.2em] text-muted ${safe.compact ? "mt-0.5 text-[9px]" : "mt-1 text-[10px] md:mt-1.5 md:text-xs lg:text-sm"}`}>
+              The history you were never taught
+            </p>
+            <p className={`uppercase tracking-[0.18em] text-copperSoft/90 ${safe.compact ? "mt-1 text-[9px]" : "mt-1.5 text-[10px] md:mt-2 md:text-[11px]"}`}>
+              Galleries Visited: {visitedZones.length}/{TOTAL_GALLERIES}
+            </p>
+            <p className={`font-mono uppercase tracking-[0.16em] text-muted/40 ${safe.compact ? "mt-0.5 text-[8px]" : "mt-1 text-[9px]"}`}>
+              Stored locally · No external tracking
+            </p>
+            {isDone && (
+              <button
+                type="button"
+                onClick={playIntro}
+                className="pointer-events-auto mt-2 block w-full rounded border border-copper/20 bg-transparent py-1 text-[9px] uppercase tracking-[0.14em] text-copper/70 hover:border-copper/40 hover:text-copper/90 md:mt-2.5"
+              >
+                Play intro
+              </button>
+            )}
+          </div>
+          <div className="border-t border-copper/20 px-3 py-2 md:px-3 md:py-2">
+            <TimeButtons
+              embedded
+              year={scrubYear}
+              onYearChange={(year) => {
+                setHasUserMovedScrubber(true);
+                setScrubYear(year);
+                setSelectedMarkerId(null);
+                setContextualCardDismissed(false);
+                setShowNkolosoCinematic(false);
+              }}
+            />
+          </div>
         </div>
-        <TimeButtons
-          year={scrubYear}
-          onYearChange={(year) => {
-            setScrubYear(year);
-            setSelectedMarkerId(null);
-            setContextualCardDismissed(false);
-            setShowNkolosoCinematic(false);
-          }}
-        />
       </header>
 
       {/* Skip intro button */}
-      {lobbyPhase !== "done" && lobbyPhase !== "preload" && (
+      {lobbyPhase !== "done" && (
         <button
           type="button"
           onClick={() => {
@@ -332,7 +432,7 @@ export default function HomePage() {
               window.sessionStorage.setItem(LOBBY_STORAGE_KEY, "1");
             }
           }}
-          className="absolute right-4 top-4 z-30 rounded border border-copper/35 bg-bg/70 px-3 py-1.5 text-[10px] uppercase tracking-[0.16em] text-copperSoft backdrop-blur hover:border-copper md:right-7 md:top-6"
+          style={{ top: safe.topInset + 4, right: safe.sideInset }} className="absolute z-50 rounded border border-copper/35 bg-bg/70 px-3 py-1.5 text-[10px] uppercase tracking-[0.16em] text-copperSoft backdrop-blur hover:border-copper"
         >
           Skip Intro
         </button>
@@ -360,7 +460,7 @@ export default function HomePage() {
           ══════════════════════════════════════════════════════ */}
       {showUI && (
         <nav
-          className="absolute bottom-5 left-1/2 z-30 -translate-x-1/2 flex items-center gap-1.5 rounded-lg border border-copper/30 bg-bg/85 px-4 py-2.5 backdrop-blur-md shadow-glow md:bottom-7"
+          style={{ bottom: safe.actionBottom }} className="absolute left-1/2 z-30 -translate-x-1/2 flex max-w-[92vw] items-center gap-1.5 overflow-x-auto whitespace-nowrap rounded-lg border border-copper/30 bg-bg/85 px-4 py-2.5 backdrop-blur-md shadow-glow"
         >
           {/* Breathing indicator — implies a living system */}
           <div className="mr-1 h-1.5 w-1.5 rounded-full bg-copper/60 animate-[breathing_3s_ease-in-out_infinite]" />
@@ -474,6 +574,8 @@ export default function HomePage() {
         }`}
       >
         <LayersPanel
+          positionStyle={layersPositionStyle}
+          contentMaxHeight={layersContentMaxHeight}
           visibility={layerVisibility}
           onVisibilityChange={setLayerVisibility}
           visitedZones={visitedZones}
@@ -489,6 +591,7 @@ export default function HomePage() {
           }}
           onOpenSpaceMission={() => openPanel("spaceMission")}
           onEraSelect={(year) => {
+            setHasUserMovedScrubber(true);
             setScrubYear(year);
             setSelectedMarkerId(null);
             setContextualCardDismissed(false);
@@ -524,6 +627,31 @@ export default function HomePage() {
           scrubYear={scrubYear}
           selectedMarker={selectedMarker}
           activePanel={activePanel}
+        />
+      )}
+
+      {/* Interaction-driven guided tour — first-time only, advances on globe drag / scrubber / marker click */}
+      {showUI && (
+        <GuidedTourHints
+          active={showGuidedTour}
+          onComplete={() => {
+            if (typeof window !== "undefined") {
+              window.sessionStorage.setItem(TOUR_STORAGE_KEY, "1");
+            }
+            setShowGuidedTour(false);
+          }}
+          userHasDraggedGlobe={hasUserDraggedGlobe}
+          userHasMovedScrubber={hasUserMovedScrubber}
+          hasSelectedMarker={selectedMarkerId !== null}
+          layout={{
+            width: safe.width,
+            height: safe.height,
+            isDesktop: safe.isDesktop,
+            sideInset: safe.sideInset,
+            topInset: safe.topInset,
+            bottomInset: safe.bottomInset,
+            headerBottom: guidedHeaderBottom,
+          }}
         />
       )}
 
@@ -593,6 +721,59 @@ export default function HomePage() {
     </main>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

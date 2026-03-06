@@ -36,6 +36,10 @@ type GlobeProps = {
   /** Temporary confirmation pin after Village Search fly-to. Auto-expires. */
   flyToPin?: { lat: number; lng: number; placeName?: string } | null;
   onFlyToPinExpire?: () => void;
+  /** Called when user starts rotating/dragging the globe (e.g. for guided tour step 1). */
+  onUserInteract?: () => void;
+  /** During lobby, gently orient camera to Zambia/Africa before thesis. */
+  focusAfricaDuringLobby?: boolean;
 };
 
 type CityLightsProps = {
@@ -128,6 +132,23 @@ type LiveSatelliteSample = {
   altitudeKm: number;
 };
 
+type CommunityContributionSample = {
+  id: number;
+  title: string;
+  placeName: string;
+  latitude: number;
+  longitude: number;
+  epochZone: string;
+};
+
+type CommunityMissionSample = {
+  id: number;
+  name: string;
+  missionType: string;
+  altitudeKm: number;
+  inclinationDeg: number;
+};
+
 type LiveSatelliteLayerProps = {
   active: boolean;
   satellites: LiveSatelliteSample[];
@@ -135,6 +156,7 @@ type LiveSatelliteLayerProps = {
 
 function LiveSatelliteLayer({ active, satellites }: LiveSatelliteLayerProps) {
   const [selected, setSelected] = useState<LiveSatelliteSample | null>(null);
+  const [hovered, setHovered] = useState<string | null>(null);
 
   useEffect(() => {
     if (!active) setSelected(null);
@@ -148,6 +170,9 @@ function LiveSatelliteLayer({ active, satellites }: LiveSatelliteLayerProps) {
         const radius = THREE.MathUtils.clamp(1 + sat.altitudeKm / 45000, 1.03, 1.26);
         const p = latLngToVector3(sat.latitude, sat.longitude, radius);
         const selectedNow = selected?.name === sat.name;
+        const hoveredNow = hovered === sat.name;
+        const size = selectedNow ? 0.014 : hoveredNow ? 0.012 : 0.01;
+        const color = selectedNow ? "#f8e8ca" : hoveredNow ? "#c9a227" : "#B87333";
         return (
           <group key={`${sat.name}-${sat.latitude.toFixed(2)}-${sat.longitude.toFixed(2)}`} position={[p.x, p.y, p.z]}>
             <mesh
@@ -155,12 +180,21 @@ function LiveSatelliteLayer({ active, satellites }: LiveSatelliteLayerProps) {
                 event.stopPropagation();
                 setSelected(sat);
               }}
+              onPointerOver={(e) => {
+                e.stopPropagation();
+                setHovered(sat.name);
+                document.body.style.cursor = "pointer";
+              }}
+              onPointerOut={() => {
+                setHovered(null);
+                document.body.style.cursor = "auto";
+              }}
             >
-              <sphereGeometry args={[selectedNow ? 0.014 : 0.01, 10, 10]} />
+              <octahedronGeometry args={[size, 0]} />
               <meshBasicMaterial
-                color={selectedNow ? "#f8e8ca" : "#d6dde8"}
+                color={color}
                 transparent
-                opacity={selectedNow ? 0.95 : 0.76}
+                opacity={selectedNow ? 0.95 : hoveredNow ? 0.9 : 0.8}
               />
             </mesh>
             {selectedNow && (
@@ -170,6 +204,116 @@ function LiveSatelliteLayer({ active, satellites }: LiveSatelliteLayerProps) {
                 </div>
               </Html>
             )}
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+function CommunityContributionLayer({
+  active,
+  items,
+}: {
+  active: boolean;
+  items: CommunityContributionSample[];
+}) {
+  const { camera } = useThree();
+  const [selected, setSelected] = useState<CommunityContributionSample | null>(null);
+  const [lodTier, setLodTier] = useState(2);
+
+  useFrame(() => {
+    const dist = camera.position.length();
+    const nextTier = dist > 4.2 ? 0 : dist > 3.1 ? 1 : 2;
+    setLodTier((prev) => (prev === nextTier ? prev : nextTier));
+  });
+
+  useEffect(() => {
+    if (!active) setSelected(null);
+  }, [active]);
+
+  if (!active || items.length === 0) return null;
+
+  const cellSize = lodTier === 0 ? 2.2 : lodTier === 1 ? 1.3 : 0.7;
+  const maxPoints = lodTier === 0 ? 36 : lodTier === 1 ? 72 : 120;
+  const bucket = new Map<string, CommunityContributionSample>();
+  for (const item of items) {
+    const key = `${Math.round(item.latitude / cellSize)}:${Math.round(item.longitude / cellSize)}`;
+    if (!bucket.has(key)) bucket.set(key, item);
+    if (bucket.size >= maxPoints) break;
+  }
+  const visibleItems = [...bucket.values()];
+
+  return (
+    <group>
+      {visibleItems.map((item) => {
+        const p = latLngToVector3(item.latitude, item.longitude, 1.016);
+        const selectedNow = selected?.id === item.id;
+        return (
+          <group key={`community-${item.id}`} position={[p.x, p.y, p.z]}>
+            <mesh
+              onClick={(event) => {
+                event.stopPropagation();
+                setSelected(item);
+              }}
+              onPointerOver={() => {
+                document.body.style.cursor = "pointer";
+              }}
+              onPointerOut={() => {
+                document.body.style.cursor = "auto";
+              }}
+            >
+              <sphereGeometry args={[selectedNow ? 0.011 : 0.009, 10, 10]} />
+              <meshBasicMaterial color={selectedNow ? "#f8e8ca" : "#d08a3f"} transparent opacity={0.9} />
+            </mesh>
+            {selectedNow && (
+              <Html center distanceFactor={8}>
+                <div className="rounded border border-copper/35 bg-panel/90 px-2 py-1 text-[9px] uppercase tracking-[0.12em] text-copperSoft whitespace-nowrap">
+                  {item.placeName || item.title}
+                </div>
+              </Html>
+            )}
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
+function CommunityMissionTrackLayer({
+  active,
+  missions,
+}: {
+  active: boolean;
+  missions: CommunityMissionSample[];
+}) {
+  const { camera } = useThree();
+  const [lodTier, setLodTier] = useState(2);
+
+  useFrame(() => {
+    const dist = camera.position.length();
+    const nextTier = dist > 4.2 ? 0 : dist > 3.1 ? 1 : 2;
+    setLodTier((prev) => (prev === nextTier ? prev : nextTier));
+  });
+
+  if (!active || missions.length === 0) return null;
+
+  const trackCount = lodTier === 0 ? 6 : lodTier === 1 ? 10 : 16;
+  const opacity = lodTier === 0 ? 0.18 : lodTier === 1 ? 0.23 : 0.28;
+
+  return (
+    <group>
+      {missions.slice(0, trackCount).map((mission) => {
+        const orbitRadius = THREE.MathUtils.clamp(1 + mission.altitudeKm / 46000, 1.06, 1.24);
+        const yaw = ((mission.id * 23) % 360) * (Math.PI / 180);
+        return (
+          <group
+            key={`mission-${mission.id}`}
+            rotation={[THREE.MathUtils.degToRad(mission.inclinationDeg), yaw, 0]}
+          >
+            <mesh rotation={[Math.PI / 2, 0, 0]}>
+              <torusGeometry args={[orbitRadius, 0.0013, 6, 128]} />
+              <meshBasicMaterial color="#b87333" transparent opacity={opacity} />
+            </mesh>
           </group>
         );
       })}
@@ -243,6 +387,8 @@ function Scene({
   flyToCoordinate,
   flyToPin,
   onFlyToPinExpire,
+  onUserInteract,
+  focusAfricaDuringLobby = false,
 }: GlobeProps) {
   const { clock, gl, camera } = useThree();
   const globeRef = useRef<THREE.Group>(null);
@@ -260,7 +406,10 @@ function Scene({
   );
   const africaCameraRef = useRef(africaCenteredCameraPosition(3.2));
   const snapActiveRef = useRef(false);
+  const lobbyFocusDoneRef = useRef(false);
   const [liveSatellites, setLiveSatellites] = useState<LiveSatelliteSample[]>([]);
+  const [approvedContributions, setApprovedContributions] = useState<CommunityContributionSample[]>([]);
+  const [approvedMissions, setApprovedMissions] = useState<CommunityMissionSample[]>([]);
 
 
   const xrayEnabled = scrubYear < -10000;
@@ -395,26 +544,80 @@ function Scene({
       clearInterval(intervalId);
     };
   }, [layerVisibility.liveSatellites, layerVisibility.space]);
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadApproved = async () => {
+      try {
+        const [communityRes, missionRes] = await Promise.all([
+          fetch("/api/community/approved", { cache: "no-store" }),
+          fetch("/api/space/mission/approved", { cache: "no-store" }),
+        ]);
+
+        if (!communityRes.ok || !missionRes.ok || cancelled) return;
+
+        const communityPayload = (await communityRes.json()) as {
+          items?: CommunityContributionSample[];
+        };
+        const missionPayload = (await missionRes.json()) as {
+          items?: CommunityMissionSample[];
+        };
+
+        if (cancelled) return;
+        setApprovedContributions(Array.isArray(communityPayload.items) ? communityPayload.items.slice(0, 140) : []);
+        setApprovedMissions(Array.isArray(missionPayload.items) ? missionPayload.items.slice(0, 48) : []);
+      } catch {
+        // Keep prior approved samples while offline.
+      }
+    };
+
+    loadApproved();
+    const intervalId = setInterval(loadApproved, 120_000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!focusAfricaDuringLobby) {
+      lobbyFocusDoneRef.current = false;
+    }
+  }, [focusAfricaDuringLobby]);
+
   useFrame((state, delta) => {
     const { camera } = state;
     const now = state.clock.elapsedTime;
     const controls = controlsRef.current;
     if (!controls) return;
 
-    // Idle snap to Africa: after 15s with no marker and no interaction.
+    if (focusAfricaDuringLobby && !selectedMarker && !lobbyFocusDoneRef.current) {
+      controls.autoRotate = false;
+      const damp = 1 - Math.exp(-delta * 1.25);
+      camera.position.lerp(africaCameraRef.current, damp);
+      controls.target.lerp(africaTargetRef.current, damp);
+      controls.update();
+
+      const cameraSettled = camera.position.distanceTo(africaCameraRef.current) < 0.02;
+      const targetSettled = controls.target.distanceTo(africaTargetRef.current) < 0.015;
+      if (cameraSettled && targetSettled) {
+        lobbyFocusDoneRef.current = true;
+        lastInteractionRef.current = now;
+      }
+      return;
+    }
+
     if (!selectedMarker) {
       if (lastInteractionRef.current === 0) lastInteractionRef.current = now;
       const idleTime = now - lastInteractionRef.current;
 
-      // Snap after 8s — keeps Africa anchored as the mental model
       if (idleTime > 8) {
         snapActiveRef.current = true;
       }
 
       if (snapActiveRef.current) {
-        // Pause autoRotate so it doesn't fight the lerp-back path.
         controls.autoRotate = false;
-        // Lower damp for a softer, cinematic drift back to origin
         const damp = 1 - Math.exp(-delta * 0.85);
         camera.position.lerp(africaCameraRef.current, damp);
         controls.target.lerp(africaTargetRef.current, damp);
@@ -426,13 +629,12 @@ function Scene({
           controls.target.distanceTo(africaTargetRef.current) < 0.008;
         if (cameraSettled && targetSettled) {
           snapActiveRef.current = false;
-          controls.autoRotate = true; // Resume gentle drift once settled
+          controls.autoRotate = true;
           lastInteractionRef.current = now;
         }
       }
     }
   });
-
   useFrame(({ clock }) => {
     const transition = transitionRef.current;
     if (transition.startTime < 0 && transition.from === transition.to) return;
@@ -487,15 +689,18 @@ function Scene({
       <directionalLight position={[2.5, 1.5, 3]} intensity={0.75} color="#e8ecf4" />
       <directionalLight position={[-2, -1, -2]} intensity={0.08} color="#ffffff" />
 
-      <Stars radius={120} depth={40} count={500} factor={3} saturation={0} fade />
-      <Sparkles
-        count={22}
-        scale={[2.5, 2.5, 2.5]}
-        size={1.0}
-        speed={0.05}
-        color="#B87333"
-        opacity={0.12}
-      />
+      {/* Stars + Sparkles: render first (background) so they're visible in dev and prod */}
+      <group renderOrder={-1}>
+        <Stars radius={120} depth={40} count={500} factor={3.5} saturation={0} fade />
+        <Sparkles
+          count={22}
+          scale={[2.5, 2.5, 2.5]}
+          size={1.0}
+          speed={0.05}
+          color="#B87333"
+          opacity={0.12}
+        />
+      </group>
 
       <OrbitControls
         ref={controlsRef}
@@ -507,13 +712,14 @@ function Scene({
         maxDistance={5}
         enableDamping
         dampingFactor={0.045}
-        autoRotate={!selectedMarker} // Only autoRotate if no marker is active
+        autoRotate={!selectedMarker && !focusAfricaDuringLobby} // Keep intro focus stable until Africa is centered
         autoRotateSpeed={0.15}
         minPolarAngle={0.15}
         maxPolarAngle={Math.PI - 0.15}
         onStart={() => {
           lastInteractionRef.current = clock.getElapsedTime();
           snapActiveRef.current = false;
+          onUserInteract?.();
         }}
         onChange={() => {
           // Keep idle timer alive through damping settle — without this, the
@@ -578,6 +784,14 @@ function Scene({
           active={layerVisibility.space !== false && layerVisibility.liveSatellites !== false}
           satellites={liveSatellites}
         />
+        <CommunityMissionTrackLayer
+          active={layerVisibility.space !== false}
+          missions={approvedMissions}
+        />
+        <CommunityContributionLayer
+          active={showHUD}
+          items={approvedContributions}
+        />
         {layerVisibility.particles !== false && (
           <LusakaParticleSwarm active={selectedMarker?.id === "lusaka-independence"} />
         )}
@@ -609,24 +823,34 @@ function Scene({
   );
 }
 
-const INITIAL_CAMERA = africaCenteredCameraPosition(3.2);
 
-/** Responsive FOV: wider on mobile so the globe appears smaller and fits the screen */
-function useResponsiveFov(baseFov: number): number {
-  const [fov, setFov] = useState(baseFov);
+function useResponsiveViewport(baseFov: number, baseDistance: number): { fov: number; distance: number } {
+  const [viewport, setViewport] = useState({ fov: baseFov, distance: baseDistance });
+
   useEffect(() => {
     const update = () => {
       const w = window.innerWidth;
-      // Mobile: wider FOV to shrink the globe with margins; tablet: moderate; desktop: base
-      if (w < 480) setFov(68);
-      else if (w < 768) setFov(55);
-      else setFov(baseFov);
+      const h = window.innerHeight;
+
+      if (w < 480) {
+        setViewport({ fov: h < 760 ? 60 : 58, distance: h < 760 ? 3.28 : 3.18 });
+        return;
+      }
+
+      if (w < 768) {
+        setViewport({ fov: h < 760 ? 52 : 50, distance: h < 760 ? 3.18 : 3.08 });
+        return;
+      }
+
+      setViewport({ fov: baseFov, distance: baseDistance });
     };
+
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
-  }, [baseFov]);
-  return fov;
+  }, [baseFov, baseDistance]);
+
+  return viewport;
 }
 
 export function Globe({
@@ -638,8 +862,11 @@ export function Globe({
   flyToCoordinate,
   flyToPin,
   onFlyToPinExpire,
+  onUserInteract,
+  focusAfricaDuringLobby = false,
 }: GlobeProps) {
-  const fov = useResponsiveFov(42);
+  const { fov, distance } = useResponsiveViewport(42, 3.2);
+  const initialCamera = useMemo(() => africaCenteredCameraPosition(distance), [distance]);
 
   return (
     <Canvas
@@ -659,7 +886,7 @@ export function Globe({
         renderer.outputColorSpace = THREE.SRGBColorSpace;
       }}
       camera={{
-        position: [INITIAL_CAMERA.x, INITIAL_CAMERA.y, INITIAL_CAMERA.z],
+        position: [initialCamera.x, initialCamera.y, initialCamera.z],
         fov,
       }}
     >
@@ -672,10 +899,21 @@ export function Globe({
         flyToCoordinate={flyToCoordinate}
         flyToPin={flyToPin}
         onFlyToPinExpire={onFlyToPinExpire}
+        onUserInteract={onUserInteract}
+        focusAfricaDuringLobby={focusAfricaDuringLobby}
       />
     </Canvas>
   );
 }
+
+
+
+
+
+
+
+
+
 
 
 

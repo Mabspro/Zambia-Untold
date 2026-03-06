@@ -63,6 +63,14 @@ type EarthObservationPayload = {
   events: Array<{ id: string; title: string; categories: string[]; latestDate: string }>;
 };
 
+type ApprovedListPayload = {
+  generatedAt: string;
+  sourceStatus: "live" | "fallback";
+  source: string;
+  count: number;
+  items: unknown[];
+};
+
 type SpaceSignalProps = {
   enabled: boolean;
   earthObservationEnabled: boolean;
@@ -74,6 +82,8 @@ export function SpaceSignal({ enabled, earthObservationEnabled, onOpenMissionBui
   const [catalog, setCatalog] = useState<SpaceCatalogPayload | null>(null);
   const [norad, setNorad] = useState<NoradPayload | null>(null);
   const [earth, setEarth] = useState<EarthObservationPayload | null>(null);
+  const [approvedCommunity, setApprovedCommunity] = useState<ApprovedListPayload | null>(null);
+  const [approvedMissions, setApprovedMissions] = useState<ApprovedListPayload | null>(null);
 
   useEffect(() => {
     if (!enabled) return;
@@ -82,13 +92,15 @@ export function SpaceSignal({ enabled, earthObservationEnabled, onOpenMissionBui
 
     const load = async () => {
       try {
-        const [liveRes, catalogRes, noradRes, earthRes] = await Promise.all([
+        const [liveRes, catalogRes, noradRes, earthRes, approvedCommunityRes, approvedMissionsRes] = await Promise.all([
           fetch("/api/space/live", { cache: "no-store" }),
           fetch("/api/space/catalog", { cache: "no-store" }),
           fetch("/api/space/norad", { cache: "no-store" }),
           earthObservationEnabled
             ? fetch("/api/earth/observation", { cache: "no-store" })
             : Promise.resolve(new Response(null, { status: 204 })),
+          fetch("/api/community/approved", { cache: "no-store" }),
+          fetch("/api/space/mission/approved", { cache: "no-store" }),
         ]);
 
         if (liveRes.ok) {
@@ -106,6 +118,14 @@ export function SpaceSignal({ enabled, earthObservationEnabled, onOpenMissionBui
         if (earthRes.status !== 204 && earthRes.ok) {
           const payload = (await earthRes.json()) as EarthObservationPayload;
           if (!cancelled) setEarth(payload);
+        }
+        if (approvedCommunityRes.ok) {
+          const payload = (await approvedCommunityRes.json()) as ApprovedListPayload;
+          if (!cancelled) setApprovedCommunity(payload);
+        }
+        if (approvedMissionsRes.ok) {
+          const payload = (await approvedMissionsRes.json()) as ApprovedListPayload;
+          if (!cancelled) setApprovedMissions(payload);
         }
       } catch {
         // Keep prior payload if fetch fails.
@@ -167,6 +187,16 @@ export function SpaceSignal({ enabled, earthObservationEnabled, onOpenMissionBui
         </div>
       )}
 
+      {(approvedCommunity || approvedMissions) && (
+        <div className="mt-2 rounded border border-copper/20 bg-panel/55 px-2 py-1.5">
+          <p className="text-[9px] uppercase tracking-[0.14em] text-copper/70">Living Archive · Approved</p>
+          <div className="mt-1 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[9px] text-muted/85">
+            <span>Isibalo: {approvedCommunity?.count ?? 0}</span>
+            <span>Missions: {approvedMissions?.count ?? 0}</span>
+          </div>
+        </div>
+      )}
+
       {earthObservationEnabled && earth && (
         <div className="mt-2 rounded border border-copper/20 bg-panel/55 px-2 py-1.5">
           <p className="text-[9px] uppercase tracking-[0.14em] text-copper/70">
@@ -201,6 +231,3 @@ export function SpaceSignal({ enabled, earthObservationEnabled, onOpenMissionBui
     </aside>
   );
 }
-
-
-

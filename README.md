@@ -124,6 +124,12 @@ The data is global. The vantage point is Zambian. The stories are sovereign.
 
 ---
 
+## 📐 Development & regression prevention
+
+Before merging or releasing: run `npm run validate`. See **[`docs/DEVELOPMENT_GUIDELINES.md`](./docs/DEVELOPMENT_GUIDELINES.md)** for critical invariants (lobby, guided tour, header, Supabase), pre-merge checklist, and links to CONTRIBUTING, TECH_AUDIT_MATRIX, and deploy docs.
+
+---
+
 ## 📄 License
 
 Creative Commons Attribution — community contributions displayed under CC-BY.
@@ -187,8 +193,49 @@ Creative Commons Attribution — community contributions displayed under CC-BY.
 - `npm run build` failed in this environment with webpack `spawn EPERM` (permission issue), not TS/ESLint errors.
 
 ## Next Steps (Updated)
-1. Configure Supabase server env (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`) and verify writes into `isibalo_submissions` and `space_mission_proposals`.
-2. Add Supabase read APIs for approved contributions/missions and render them as globe community tracks.
+1. See [`docs/DEPLOY.md`](./docs/DEPLOY.md) for **GitHub, Vercel, and Supabase** setup. **Current status:** SQL executed, `.env.local` present, Vercel deployed — confirm env vars in Vercel match local and verify `/notes` and submission writes.
+2. Verify approved read-path against real moderation data in Supabase and tune payload limits.
 3. Optimize satellite rendering with clustering at zoomed-out distances to reduce visual noise.
 4. Add mobile QA pass for the new live satellites and cinematic audio controls.
 5. Resolve build-environment EPERM (likely local permission/process lock) and rerun `npm run validate`.
+
+## Engineering Guardrails
+
+To reduce regressions during progressive development, use:
+- [`docs/DEVELOPMENT_GUARDRAILS.md`](./docs/DEVELOPMENT_GUARDRAILS.md) - quality gates, UI/intro invariants, regression checklist.
+- [`docs/ENGINEERING_MEMORY.md`](./docs/ENGINEERING_MEMORY.md) - short continuity log for decisions, risks, and follow-ups.
+
+Recommended workflow for every UI/system change:
+1. Add/update an Engineering Memory entry.
+2. Implement smallest vertical slice.
+3. Run `npm run typecheck` and `npm run lint`.
+4. Run targeted visual checks at mobile and desktop breakpoints.
+
+
+
+
+## Progress Update (March 2026 - C2/C2.5 Integration Pass)
+
+### Completed in this pass
+- Added approved-read APIs:
+  - `/api/community/approved`
+  - `/api/space/mission/approved`
+- Extended Supabase server adapter with `selectSupabaseRows` for read paths.
+- Rendered approved community artifacts on globe:
+  - Approved Isibalo geospatial points.
+  - Approved mission orbital tracks.
+- Added zoom-aware visual declutter:
+  - Community point and mission track LOD thinning based on camera distance.
+- Added moderation telemetry in `Space Signal`:
+  - Displays approved Isibalo and approved mission counts.
+
+### Validation
+- `npm run typecheck` passes.
+- `npm run lint` passes.
+- `npm run build` still fails in this environment with `spawn EPERM`.
+
+### Next
+1. Verify approved endpoint payloads against live moderated Supabase records.
+2. Tune LOD thresholds with production-size datasets.
+3. Add admin moderation queue surfaces (pending/rejected) and review actions.
+4. Resolve local worker-spawn permission issue blocking production build.
