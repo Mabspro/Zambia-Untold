@@ -56,7 +56,7 @@ const DEFAULT_LAYERS: LayerVisibility = {
   zambezi: true,
   space: true,
   earthObservation: true,
-  liveSatellites: false,
+  liveSatellites: true,
   community: true,
 };
 
@@ -198,16 +198,14 @@ export default function HomePage() {
       try {
         const parsed = JSON.parse(savedLayersRaw) as Partial<LayerVisibility>;
         const hydratedLayers: LayerVisibility = { ...DEFAULT_LAYERS, ...parsed };
+        if (window.innerWidth >= 768) {
+          hydratedLayers.liveSatellites = true;
+        }
         prevLayerRef.current = hydratedLayers;
         setLayerVisibility(hydratedLayers);
       } catch {
         // Ignore malformed local data and keep defaults.
       }
-    } else if (window.innerWidth >= 768) {
-      // Desktop first-run default: keep satellites visible unless user opts out.
-      const desktopLayers: LayerVisibility = { ...DEFAULT_LAYERS, liveSatellites: true };
-      prevLayerRef.current = desktopLayers;
-      setLayerVisibility(desktopLayers);
     }
 
     if (passport) {
@@ -824,6 +822,9 @@ export default function HomePage() {
           enabled={layerVisibility.space !== false}
           earthObservationEnabled={layerVisibility.earthObservation !== false}
           liveSatellitesEnabled={layerVisibility.liveSatellites !== false}
+          onEnableLiveSatellites={() => {
+            setLayerVisibility((prev) => ({ ...prev, space: true, liveSatellites: true }));
+          }}
           onOpenMissionBuilder={() => openPanel("spaceMission")}
           guidedTourActive={showGuidedTour}
         />
@@ -1005,6 +1006,11 @@ export default function HomePage() {
     </main>
   );
 }
+
+
+
+
+
 
 
 

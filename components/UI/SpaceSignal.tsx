@@ -90,6 +90,7 @@ type SpaceSignalProps = {
   enabled: boolean;
   earthObservationEnabled: boolean;
   liveSatellitesEnabled?: boolean;
+  onEnableLiveSatellites?: () => void;
   onOpenMissionBuilder?: () => void;
   /** When true, mobile compact panel is hidden to avoid overlapping the guided tour. */
   guidedTourActive?: boolean;
@@ -100,6 +101,7 @@ export function SpaceSignal({
   earthObservationEnabled,
   liveSatellitesEnabled = false,
   onOpenMissionBuilder,
+  onEnableLiveSatellites,
   guidedTourActive,
 }: SpaceSignalProps) {
   const [data, setData] = useState<SpaceSignalPayload | null>(null);
@@ -220,7 +222,16 @@ export function SpaceSignal({
             ) : liveSatellitesEnabled ? (
               <p className="mt-1 text-[11px] text-muted/80">No tracked satellite directly overhead this minute.</p>
             ) : (
-              <p className="mt-1 text-[11px] text-muted/80">Enable Live Satellites layer to inspect overhead objects.</p>
+              <div className="mt-1 flex items-center justify-between gap-2">
+                <p className="text-[11px] text-muted/80">Enable Live Satellites layer to inspect overhead objects.</p>
+                <button
+                  type="button"
+                  onClick={onEnableLiveSatellites}
+                  className="rounded border border-copper/30 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-copper/85 hover:bg-copper/10"
+                >
+                  Enable
+                </button>
+              </div>
             )}
           </div>
         )}
@@ -344,5 +355,8 @@ export function SpaceSignal({
     </>
   );
 }
+
+
+
 
 
