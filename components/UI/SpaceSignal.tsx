@@ -289,7 +289,7 @@ export function SpaceSignal({
       </aside>
 
       {!(guidedTourActive === true) && (
-        <aside className="pointer-events-auto fixed bottom-[6.4rem] left-3 right-3 z-20 border border-copper/30 bg-bg/88 px-2.5 py-2 backdrop-blur-md md:hidden">
+        <aside className="pointer-events-auto fixed bottom-[8.8rem] left-3 right-3 z-20 border border-copper/20 bg-bg/72 px-2.5 py-2 backdrop-blur-sm md:hidden">
           {!mobileExpanded ? (
             <div className="flex items-center justify-between gap-2">
               <p className="font-display text-[11px] uppercase tracking-[0.16em] text-copperSoft">Space Signal</p>
@@ -300,7 +300,7 @@ export function SpaceSignal({
                 <button
                   type="button"
                   onClick={() => setMobileExpanded(true)}
-                  className="min-h-11 rounded border border-copper/30 px-2 py-1 text-[11px] uppercase tracking-[0.12em] text-copperSoft"
+                  className="min-h-11 rounded border border-copper/25 px-2 py-1 text-[11px] uppercase tracking-[0.12em] text-copperSoft/90"
                 >
                   Open
                 </button>
@@ -331,7 +331,7 @@ export function SpaceSignal({
                 <button
                   type="button"
                   onClick={onOpenMissionBuilder}
-                  className="min-h-11 rounded border border-copper/30 px-2 py-1 text-[11px] uppercase tracking-[0.12em] text-copperSoft hover:border-copper"
+                  className="min-h-11 rounded border border-copper/25 px-2 py-1 text-[11px] uppercase tracking-[0.12em] text-copperSoft/90 hover:border-copper/70"
                 >
                   Mission
                 </button>
@@ -344,4 +344,5 @@ export function SpaceSignal({
     </>
   );
 }
+
 

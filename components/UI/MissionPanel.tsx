@@ -47,7 +47,7 @@ export function MissionPanel({
 
   return (
     <>
-      <aside className="pointer-events-auto fixed bottom-[10.4rem] left-3 right-3 z-[35] w-auto md:bottom-6 md:left-6 md:right-auto md:w-[420px]">
+      <aside className="pointer-events-auto fixed bottom-[12.2rem] left-3 right-3 z-[35] w-auto md:bottom-6 md:left-6 md:right-auto md:w-[420px]">
         <AnimatePresence mode="wait" initial={false}>
           {collapsed ? (
             <motion.button
@@ -59,18 +59,23 @@ export function MissionPanel({
               exit={{ opacity: 0, y: 6 }}
               className="terminal-panel w-full border border-copper/30 bg-[#0A0806]/95 px-3 py-2 text-left"
             >
-              <p className="font-mono text-[11px] uppercase tracking-[0.15em] text-copperSoft/85">
-                <span
-                  className={
-                    showPulseCue && !missionOneComplete
-                      ? "inline-block animate-[mission-cue_30s_ease-in-out_infinite]"
-                      : "inline-block"
-                  }
-                >
-                  ▶
-                </span>{" "}
-                {currentMission.title}
-              </p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="font-mono text-[11px] uppercase tracking-[0.15em] text-copperSoft/85">
+                  <span
+                    className={
+                      showPulseCue && !missionOneComplete
+                        ? "inline-block animate-[mission-cue_30s_ease-in-out_infinite]"
+                        : "inline-block"
+                    }
+                  >
+                    ▶
+                  </span>{" "}
+                  {currentMission.title}
+                </p>
+                <span className="font-mono text-[11px] text-copper/80" aria-hidden>
+                  ▴
+                </span>
+              </div>
               <p className="mt-1 font-mono text-[11px] tracking-[0.12em] text-[#7A6550]/80" aria-hidden>
                 {currentMission.steps.map((step) => (progress.completedSteps.includes(step.id) ? "[█]" : "[·]")).join(" ")}
               </p>
@@ -91,9 +96,10 @@ export function MissionPanel({
                     setUserCollapsed(true);
                     setCollapsed(true);
                   }}
-                  className="border border-copper/25 px-2 py-0.5 font-mono text-[11px] uppercase tracking-[0.12em] text-muted/80 hover:text-text"
+                  className="min-h-11 border border-copper/25 px-2 py-0.5 font-mono text-[11px] uppercase tracking-[0.12em] text-muted/80 hover:text-text"
+                  aria-label="Collapse mission panel"
                 >
-                  Minimize
+                  ▾
                 </button>
               </div>
               <div className="mt-1 border-t border-copper/25" />
@@ -138,7 +144,7 @@ export function MissionPanel({
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
-            className="fixed bottom-[11.8rem] left-3 right-3 z-[45] w-auto border border-copper/35 bg-panel/95 p-3 backdrop-blur md:bottom-8 md:left-8 md:right-auto md:w-[420px]"
+            className="fixed bottom-[13.6rem] left-3 right-3 z-[45] w-auto border border-copper/35 bg-panel/95 p-3 backdrop-blur md:bottom-8 md:left-8 md:right-auto md:w-[420px]"
           >
             <div className="flex items-center justify-between">
               <p className="font-display text-[12px] uppercase tracking-[0.18em] text-copper">Mission Log</p>

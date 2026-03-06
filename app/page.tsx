@@ -437,7 +437,8 @@ export default function HomePage() {
     ? { top: layersTop, left: headerSideInset, width: 270 }
     : { top: layersTop, left: headerSideInset, right: headerSideInset };
   const guidedHeaderBottom = headerBottom + (layersExpanded ? 40 : 12);
-  const hideMobileAuxOverlays = layersExpanded && !safe.isDesktop;
+  const hideMobileAuxOverlays = !safe.isDesktop && (layersExpanded || showGuidedTour);
+  const mobileBottomInsetPx = safe.isDesktop ? safe.actionBottom : safe.actionBottom + 52;
 
   return (
     <main className="relative isolate h-full min-h-screen w-full max-w-full overflow-x-hidden overflow-y-hidden" style={{ backgroundColor: "#030405" }}>
@@ -565,7 +566,12 @@ export default function HomePage() {
               window.sessionStorage.setItem(LOBBY_STORAGE_KEY, "1");
             }
           }}
-          style={{ bottom: safe.actionBottom, left: "50%", transform: "translateX(-50%)", top: "auto" }}
+          style={{
+            bottom: `calc(env(safe-area-inset-bottom, 0px) + ${mobileBottomInsetPx}px)`,
+            left: "50%",
+            transform: "translateX(-50%)",
+            top: "auto",
+          }}
           className="fixed z-50 rounded border border-copper/35 bg-bg/70 px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-copperSoft backdrop-blur hover:border-copper"
         >
           SKIP BRIEFING · BOTTOM
@@ -622,7 +628,7 @@ export default function HomePage() {
       {showUI && (
         <nav
           style={{
-            bottom: safe.actionBottom,
+            bottom: `calc(env(safe-area-inset-bottom, 0px) + ${mobileBottomInsetPx}px)`,
             ...(safe.isDesktop
               ? { left: "50%", transform: "translateX(-50%)", maxWidth: "min(92vw, 520px)" }
               : { left: safe.sideInset, right: safe.sideInset }),
@@ -978,6 +984,7 @@ export default function HomePage() {
     </main>
   );
 }
+
 
 
 
