@@ -16,38 +16,6 @@ type SpaceSignalPayload = {
   satellitesOverZambiaEstimate: number;
 };
 
-type CatalogSatellite = {
-  id: number;
-  name: string;
-  operator: string;
-  latitude: number;
-  longitude: number;
-  altitudeKm: number;
-  velocityKmh: number;
-  visibility: string;
-  overZambiaNow: boolean;
-  nearbyNow: boolean;
-};
-
-type SpaceCatalogPayload = {
-  generatedAt: string;
-  sourceStatus: "live" | "fallback";
-  source: string;
-  satellites: CatalogSatellite[];
-  counts: {
-    tracked: number;
-    nearbyNow: number;
-    overZambiaNow: number;
-  };
-};
-
-type SpaceCatalogCountsPayload = {
-  totalTracked: number;
-  overZambia: number;
-  timestamp: string;
-  cached: boolean;
-};
-
 type NoradPayload = {
   generatedAt: string;
   sourceStatus: "live" | "fallback";
@@ -78,21 +46,12 @@ type ApprovedListPayload = {
   items: unknown[];
 };
 
-type ModerationStatsPayload = {
-  generatedAt: string;
-  sourceStatus: "live" | "fallback";
-  source: string;
-  community: { pending: number; rejected: number; approved: number };
-  missions: { pending: number; rejected: number; approved: number };
-};
-
 type SpaceSignalProps = {
   enabled: boolean;
   earthObservationEnabled: boolean;
   liveSatellitesEnabled?: boolean;
   onEnableLiveSatellites?: () => void;
   onOpenMissionBuilder?: () => void;
-  /** When true, mobile compact panel is hidden to avoid overlapping the guided tour. */
   guidedTourActive?: boolean;
 };
 
@@ -105,13 +64,10 @@ export function SpaceSignal({
   guidedTourActive,
 }: SpaceSignalProps) {
   const [data, setData] = useState<SpaceSignalPayload | null>(null);
-  const [catalogCounts, setCatalogCounts] = useState<SpaceCatalogCountsPayload | null>(null);
-  const [catalogFull, setCatalogFull] = useState<SpaceCatalogPayload | null>(null);
   const [norad, setNorad] = useState<NoradPayload | null>(null);
   const [earth, setEarth] = useState<EarthObservationPayload | null>(null);
   const [approvedCommunity, setApprovedCommunity] = useState<ApprovedListPayload | null>(null);
   const [approvedMissions, setApprovedMissions] = useState<ApprovedListPayload | null>(null);
-  const [moderationStats, setModerationStats] = useState<ModerationStatsPayload | null>(null);
   const [mobileExpanded, setMobileExpanded] = useState(false);
 
   useEffect(() => {
@@ -121,25 +77,19 @@ export function SpaceSignal({
 
     const load = async () => {
       try {
-        const [liveRes, countsRes, noradRes, earthRes, approvedCommunityRes, approvedMissionsRes, moderationRes] = await Promise.all([
+        const [liveRes, noradRes, earthRes, approvedCommunityRes, approvedMissionsRes] = await Promise.all([
           fetch("/api/space/live", { cache: "no-store" }),
-          fetch("/api/space/catalog?counts=true", { cache: "no-store" }),
           fetch("/api/space/norad", { cache: "no-store" }),
           earthObservationEnabled
             ? fetch("/api/earth/observation", { cache: "no-store" })
             : Promise.resolve(new Response(null, { status: 204 })),
           fetch("/api/community/approved", { cache: "no-store" }),
           fetch("/api/space/mission/approved", { cache: "no-store" }),
-          fetch("/api/moderation/stats", { cache: "no-store" }),
         ]);
 
         if (liveRes.ok) {
           const payload = (await liveRes.json()) as SpaceSignalPayload;
           if (!cancelled) setData(payload);
-        }
-        if (countsRes.ok) {
-          const payload = (await countsRes.json()) as SpaceCatalogCountsPayload;
-          if (!cancelled) setCatalogCounts(payload);
         }
         if (noradRes.ok) {
           const payload = (await noradRes.json()) as NoradPayload;
@@ -157,20 +107,6 @@ export function SpaceSignal({
           const payload = (await approvedMissionsRes.json()) as ApprovedListPayload;
           if (!cancelled) setApprovedMissions(payload);
         }
-        if (moderationRes.ok) {
-          const payload = (await moderationRes.json()) as ModerationStatsPayload;
-          if (!cancelled) setModerationStats(payload);
-        }
-
-        if (liveSatellitesEnabled) {
-          const fullCatalogRes = await fetch("/api/space/catalog", { cache: "no-store" });
-          if (fullCatalogRes.ok) {
-            const payload = (await fullCatalogRes.json()) as SpaceCatalogPayload;
-            if (!cancelled) setCatalogFull(payload);
-          }
-        } else if (!cancelled) {
-          setCatalogFull(null);
-        }
       } catch {
         // Keep prior payload if fetch fails.
       }
@@ -182,12 +118,13 @@ export function SpaceSignal({
       cancelled = true;
       clearInterval(id);
     };
-  }, [enabled, earthObservationEnabled, liveSatellitesEnabled]);
+  }, [enabled, earthObservationEnabled]);
 
   if (!enabled || !data) return null;
 
-  const overNow = catalogFull?.satellites.filter((s) => s.overZambiaNow).slice(0, 3) ?? [];
+  const overNow = norad?.sample.slice(0, 3) ?? [];
   const earthEvents = earth?.events.slice(0, 3) ?? [];
+  const archiveCount = (approvedCommunity?.count ?? 0) + (approvedMissions?.count ?? 0);
 
   return (
     <>
@@ -206,15 +143,15 @@ export function SpaceSignal({
 
         <p className="mt-1 text-[11px] uppercase tracking-[0.1em] text-muted/75">Orbital: CelesTrak/NORAD + wheretheiss.at · Compute: CopperCloud</p>
 
-        {catalogCounts && (
+        {norad && (
           <div className="mt-2 border border-copper/20 bg-panel/55 px-2 py-1.5">
             <p className="text-[11px] uppercase tracking-[0.14em] text-copper/85">
-              Live Satellites · Over Zambia Now: {catalogCounts.overZambia}
+              Live Satellites · Over Zambia Now: {norad.counts.overZambiaNow}
             </p>
             {liveSatellitesEnabled && overNow.length > 0 ? (
               <div className="mt-1 space-y-0.5">
                 {overNow.map((sat) => (
-                  <p key={sat.id} className="text-[11px] text-muted/80">
+                  <p key={`${sat.name}-${sat.latitude.toFixed(2)}-${sat.longitude.toFixed(2)}`} className="text-[11px] text-muted/80">
                     {sat.name} · {Math.round(sat.altitudeKm)} km
                   </p>
                 ))}
@@ -236,32 +173,12 @@ export function SpaceSignal({
           </div>
         )}
 
-        {norad && (
-          <div className="mt-2 border border-copper/20 bg-panel/55 px-2 py-1.5">
-            <p className="text-[11px] uppercase tracking-[0.14em] text-muted/75">
-              NORAD Parsed: {norad.counts.totalParsed} · Over Zambia Now: {norad.counts.overZambiaNow}
-            </p>
-          </div>
-        )}
-
         {(approvedCommunity || approvedMissions) && (
           <div className="mt-2 border border-copper/20 bg-panel/55 px-2 py-1.5">
             <p className="text-[11px] uppercase tracking-[0.14em] text-copper/80">Living Archive · Approved</p>
             <div className="mt-1 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[11px] text-muted/80">
               <span>Isibalo: {approvedCommunity?.count ?? 0}</span>
               <span>Missions: {approvedMissions?.count ?? 0}</span>
-            </div>
-          </div>
-        )}
-
-        {moderationStats && (
-          <div className="mt-2 border border-copper/20 bg-panel/55 px-2 py-1.5">
-            <p className="text-[11px] uppercase tracking-[0.14em] text-muted/75">Moderation Queue</p>
-            <div className="mt-1 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[11px] text-muted/75">
-              <span>Community pending: {moderationStats.community.pending}</span>
-              <span>Mission pending: {moderationStats.missions.pending}</span>
-              <span>Community rejected: {moderationStats.community.rejected}</span>
-              <span>Mission rejected: {moderationStats.missions.rejected}</span>
             </div>
           </div>
         )}
@@ -306,7 +223,7 @@ export function SpaceSignal({
               <p className="font-display text-[11px] uppercase tracking-[0.16em] text-copperSoft">Space Signal</p>
               <div className="flex items-center gap-2">
                 <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-muted/75">
-                  Sat over ZM: {catalogCounts?.overZambia ?? 0}
+                  Sat over ZM: {norad?.counts.overZambiaNow ?? 0}
                 </p>
                 <button
                   type="button"
@@ -331,9 +248,9 @@ export function SpaceSignal({
               </div>
               <div className="mt-1 grid grid-cols-2 gap-x-2 text-[11px] text-text/80">
                 <span>ISS: {data.iss.overheadZambia ? "Overhead" : "Not overhead"}</span>
-                <span>Sat over ZM: {catalogCounts?.overZambia ?? 0}</span>
+                <span>Sat over ZM: {norad?.counts.overZambiaNow ?? 0}</span>
                 <span>Mars: {Math.round(data.earthMarsDistanceKm / 1_000_000)}M km</span>
-                <span>Queue: {moderationStats ? moderationStats.community.pending + moderationStats.missions.pending : 0}</span>
+                <span>Archive: {archiveCount}</span>
               </div>
               <div className="mt-1.5 flex items-center justify-between">
                 <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-muted/75">
@@ -351,12 +268,6 @@ export function SpaceSignal({
           )}
         </aside>
       )}
-
     </>
   );
 }
-
-
-
-
-

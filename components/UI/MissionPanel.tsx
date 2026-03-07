@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MISSIONS, type Mission } from "@/lib/missions";
 import type { MissionProgress } from "@/lib/museumPassport";
@@ -26,6 +26,9 @@ export function MissionPanel({
   const [collapsed, setCollapsed] = useState(!startExpanded);
   const [showAll, setShowAll] = useState(false);
   const [userCollapsed, setUserCollapsed] = useState(false);
+  const dialogRef = useRef<HTMLElement | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const lastActiveElementRef = useRef<HTMLElement | null>(null);
 
   const currentMission = useMemo(() => {
     const preferred = MISSIONS.find((m) => m.id === progress.lastActiveMission);
@@ -45,9 +48,57 @@ export function MissionPanel({
     }
   }, [startExpanded, userCollapsed]);
 
+  useEffect(() => {
+    if (!showAll) return;
+
+    lastActiveElementRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    closeButtonRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setShowAll(false);
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+
+      const container = dialogRef.current;
+      if (!container) return;
+
+      const focusable = container.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+
+      if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      lastActiveElementRef.current?.focus();
+    };
+  }, [showAll]);
+
   return (
     <>
-      <aside className="pointer-events-auto fixed bottom-[12.2rem] left-3 right-3 z-[35] w-auto md:bottom-6 md:left-6 md:right-auto md:w-[420px]">
+      <aside
+        className="pointer-events-auto fixed left-3 right-3 z-[35] w-auto md:left-auto md:right-6 md:w-[min(300px,28vw)]"
+        style={{
+          bottom: "calc(5.5rem + env(safe-area-inset-bottom, 0px))",
+        }}
+      >
         <AnimatePresence mode="wait" initial={false}>
           {collapsed ? (
             <motion.button
@@ -76,8 +127,8 @@ export function MissionPanel({
                   ▴
                 </span>
               </div>
-              <p className="mt-1 font-mono text-[11px] tracking-[0.12em] text-[#7A6550]/80" aria-hidden>
-                {currentMission.steps.map((step) => (progress.completedSteps.includes(step.id) ? "[█]" : "[·]")).join(" ")}
+              <p className="mt-1 font-mono text-[11px] tracking-[0.12em] text-[#7A6550]/80">
+                {currentMission.description}
               </p>
             </motion.button>
           ) : (
@@ -86,7 +137,7 @@ export function MissionPanel({
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 6 }}
-              className="terminal-panel max-h-[42vh] overflow-y-auto border border-copper/30 bg-[#0A0806]/95 px-3 py-3 md:max-h-none md:overflow-visible"
+              className="terminal-panel max-h-[min(42vh,280px)] overflow-y-auto border border-copper/30 bg-[#0A0806]/95 px-3 py-3 md:max-h-[min(42vh,320px)] md:overflow-visible"
             >
               <div className="flex items-start justify-between gap-2">
                 <p className="font-mono text-[11px] uppercase tracking-[0.15em] text-[#7A6550]">ZAMBIA UNTOLD · MISSION SYSTEM</p>
@@ -126,6 +177,8 @@ export function MissionPanel({
                   type="button"
                   onClick={() => setShowAll(true)}
                   className="border border-copper/30 px-2 py-1 font-mono text-[11px] uppercase tracking-[0.12em] text-copperSoft hover:border-copper"
+                  aria-haspopup="dialog"
+                  aria-expanded={showAll}
                 >
                   All Missions
                 </button>
@@ -141,14 +194,23 @@ export function MissionPanel({
       <AnimatePresence>
         {showAll && (
           <motion.aside
+            ref={dialogRef}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
-            className="fixed bottom-[13.6rem] left-3 right-3 z-[45] w-auto border border-copper/35 bg-panel/95 p-3 backdrop-blur md:bottom-8 md:left-8 md:right-auto md:w-[420px]"
+            className="fixed left-3 right-3 z-[45] w-auto border border-copper/35 bg-panel/95 p-3 backdrop-blur md:left-auto md:right-8 md:w-[320px]"
+            style={{
+              bottom: "calc(7rem + env(safe-area-inset-bottom, 0px))",
+            }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="mission-log-title"
+            tabIndex={-1}
           >
             <div className="flex items-center justify-between">
-              <p className="font-display text-[12px] uppercase tracking-[0.18em] text-copper">Mission Log</p>
+              <p id="mission-log-title" className="font-display text-[12px] uppercase tracking-[0.18em] text-copper">Mission Log</p>
               <button
+                ref={closeButtonRef}
                 type="button"
                 onClick={() => setShowAll(false)}
                 className="border border-copper/25 px-2 py-1 font-mono text-[11px] uppercase tracking-[0.12em] text-muted/80 hover:text-text"
@@ -188,8 +250,3 @@ export function MissionPanel({
     </>
   );
 }
-
-
-
-
-

@@ -20,7 +20,7 @@ export const MARKERS: Marker[] = [
     epoch: -476000,
     epochLabel: "476,000 BC",
     tag: "ARCHAEOLOGY",
-    coordinates: { lat: -8.5967, lng: 31.2356, alt: 800 },
+    coordinates: { lat: -8.6067, lng: 31.2256, alt: 800 },
     headline: "Before the Pyramid. Before the Wheel. Before Homo Sapiens.",
     subhead:
       "The oldest engineered structure in human history isn't in Egypt. It's in Zambia.",
@@ -108,7 +108,7 @@ export const MARKERS: Marker[] = [
     epoch: -900_000_000,
     epochLabel: "900 Million BC",
     tag: "GEOLOGICAL SUBSTRATE",
-    coordinates: { lat: -12.5, lng: 28.5, alt: 1200 },
+    coordinates: { lat: -12.56, lng: 28.44, alt: 1200 },
     headline: "The Copper Substrate Crystallizes.",
     subhead:
       "Hydrothermal fluids deposit copper into the Katanga Supergroup above three converging cratons. Zambia's ore bodies form before complex life exists on Earth.",

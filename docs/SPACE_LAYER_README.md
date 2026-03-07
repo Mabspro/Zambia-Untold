@@ -48,11 +48,17 @@ So: **history** = Nkoloso marker + narrative + cinematic; **live data** = Space 
 | **`/api/space/mission/submit`** | POST mission proposal → Supabase `space_mission_proposals` or local fallback | SpaceMissionBuilder |
 | **`/api/earth/observation`** | NASA EONET (or similar) events in Zambia region | SpaceSignal, EarthObservationLayer |
 | **`/api/earth/imagery`** | NASA GIBS/Worldview imagery URL for Zambia AOI | EarthObservationLayer (texture overlay) |
+| **`/api/earth/imagery/landsat`** | Optional NASA Earth Imagery (Landsat 8) for date-specific, higher-res imagery; requires `NASA_API_KEY` | EarthObservationLayer (client probes it first, then falls back to GIBS on 503 or missing key) |
+
+**Earth imagery: Landsat vs GIBS**
+
+- **GIBS** (`/api/earth/imagery`): Always available; MODIS/Worldview, good for a single “Zambia texture” and low config.
+- **Landsat 8** (`/api/earth/imagery/landsat`): Optional. The client probes this route first for date-specific, higher-resolution imagery. If the backend has `NASA_API_KEY` configured (free at [api.nasa.gov](https://api.nasa.gov)) and the upstream call succeeds, Landsat imagery is returned. On 503 (missing key or API failure), the client falls back to GIBS. See `.env.example` for `NASA_API_KEY`.
 
 ### Globe components
 
 - **`ISSOrbitTrack`** — Single moving dot for ISS when `layerVisibility.space` is on.
-- **`EarthObservationLayer`** — Fetches `/api/earth/imagery`, applies texture overlay and/or pulse rings when `earthObservation` is on.
+- **`EarthObservationLayer`** — Fetches imagery via `fetchImageryUrl()`: probes `/api/earth/imagery/landsat` first, then falls back to `/api/earth/imagery` (GIBS) when the backend cannot serve Landsat imagery. Applies texture overlay and/or pulse rings when `earthObservation` is on.
 - **Live satellites** — When `liveSatellites` and `space` are on, Globe fetches `/api/space/norad`, propagates a sample, and renders selectable satellite meshes (see `Globe.tsx` state `liveSatellites` and the layer that consumes it).
 
 ### Nkoloso cinematic

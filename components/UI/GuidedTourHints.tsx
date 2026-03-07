@@ -121,7 +121,10 @@ export function GuidedTourHints({
     width: "auto",
     maxWidth: 460,
     transform: "none",
-    bottom: Math.max(layout.actionBottom + 72, layout.bottomInset + 96),
+    // Stack above action bar and mission panel: use a higher bottom so cards don't overlap
+    bottom: layout.isDesktop
+      ? "12rem"
+      : Math.max(layout.actionBottom + 72, layout.bottomInset + 96),
   };
 
   return (
@@ -166,7 +169,7 @@ export function GuidedTourHints({
               onClick={handleSkip}
               className="font-mono border border-copper/35 px-2 py-1 text-[11px] uppercase tracking-[0.12em] text-[#B87333] hover:border-copper hover:text-[#d49752]"
             >
-              SKIP BRIEFING · BOTTOM
+              Skip briefing
             </button>
           </div>
         </motion.div>
@@ -174,6 +177,7 @@ export function GuidedTourHints({
     </div>
   );
 }
+
 
 
 

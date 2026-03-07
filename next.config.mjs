@@ -44,6 +44,18 @@ const nextConfig = {
       { source: "/favicon.ico", destination: "/icon.svg", permanent: false },
     ];
   },
+  /**
+   * Raw loader for GLSL shader files (.vert / .frag / .glsl).
+   * Allows: import XRAY_VERTEX from "./shaders/xray.vert";
+   * Resolves TD-06: inline shaders in Globe.tsx migrated to /shaders/ directory.
+   */
+  webpack(config) {
+    config.module.rules.push({
+      test: /\.(glsl|vert|frag)$/,
+      type: "asset/source",
+    });
+    return config;
+  },
 };
 
 /** Skip PWA wrapper entirely when DISABLE_PWA is set (avoids spawn EPERM in restricted envs). */

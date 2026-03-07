@@ -23,7 +23,8 @@ export function SovereigntyStack({ year }: SovereigntyStackProps) {
 
   return (
     <aside
-      className="group pointer-events-auto hidden md:block fixed left-7 bottom-24 z-20 w-[220px] rounded border border-copper/25 bg-bg/75 p-2.5 text-[11px] uppercase tracking-[0.14em] text-text backdrop-blur-sm"
+      className="group pointer-events-auto hidden md:block fixed left-7 z-20 w-[220px] rounded border border-copper/25 bg-bg/75 p-2.5 text-[11px] uppercase tracking-[0.14em] text-text backdrop-blur-sm"
+      style={{ bottom: "calc(10rem + env(safe-area-inset-bottom, 0px))" }}
       aria-label="Sovereignty Stack"
     >
       <p className="mb-2 text-[11px] tracking-[0.22em] text-copper/80">

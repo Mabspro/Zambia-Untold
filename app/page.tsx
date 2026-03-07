@@ -18,7 +18,6 @@ import { SovereigntyStack } from "@/components/UI/SovereigntyStack";
 import { StoryCompass } from "@/components/UI/StoryCompass";
 import { SpaceSignal } from "@/components/UI/SpaceSignal";
 import { SpaceMissionBuilder } from "@/components/UI/SpaceMissionBuilder";
-import { ModerationConsole } from "@/components/UI/ModerationConsole";
 import { NkolosoCinematic } from "@/components/UI/NkolosoCinematic";
 import { GuidedTourHints } from "@/components/UI/GuidedTourHints";
 import { TerminalText } from "@/components/UI/TerminalText";
@@ -28,6 +27,7 @@ import { MARKERS } from "@/data/markers";
 import { MISSIONS } from "@/lib/missions";
 import { emitMissionEvent, onMissionEvent } from "@/lib/missionEvents";
 import { DEEP_TIME_MAX, formatZoneForDisplay, getZoneForYear, type DeepTimeZone } from "@/lib/deepTime";
+import { getContextualCardForYear } from "@/data/contextualEpochCards";
 import {
   loadMuseumPassport,
   saveMuseumPassport,
@@ -54,9 +54,9 @@ const DEFAULT_LAYERS: LayerVisibility = {
   province: true,
   particles: true,
   zambezi: true,
-  space: true,
-  earthObservation: true,
-  liveSatellites: true,
+  space: false,
+  earthObservation: false,
+  liveSatellites: false,
   community: true,
 };
 
@@ -76,8 +76,7 @@ type ActivePanel =
   | "contribute"
   | "deepTime"
   | "villageSearch"
-  | "spaceMission"
-  | "moderation";
+  | "spaceMission";
 
 export default function HomePage() {
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
@@ -105,6 +104,7 @@ export default function HomePage() {
   const [showLowFiPrompt, setShowLowFiPrompt] = useState(false);
   const [missionProgress, setMissionProgress] = useState<MissionProgress>(() => getInitialMissionProgress());
   const [badgeOverlayMissionId, setBadgeOverlayMissionId] = useState<string | null>(null);
+  const [observatoryIntent, setObservatoryIntent] = useState(false);
   const didBootRef = useRef(false);
   const headerCardRef = useRef<HTMLDivElement | null>(null);
   const [headerHeight, setHeaderHeight] = useState(210);
@@ -123,6 +123,10 @@ export default function HomePage() {
   const openPanel = useCallback((panel: ActivePanel) => {
     setActivePanel(panel);
     if (panel !== null) {
+      if (panel === "spaceMission") {
+        setObservatoryIntent(true);
+        setLayerVisibility((prev) => ({ ...prev, space: true }));
+      }
       setSelectedMarkerId(null);
       setContextualCardDismissed(true);
       setShowNkolosoCinematic(false);
@@ -198,11 +202,13 @@ export default function HomePage() {
       try {
         const parsed = JSON.parse(savedLayersRaw) as Partial<LayerVisibility>;
         const hydratedLayers: LayerVisibility = { ...DEFAULT_LAYERS, ...parsed };
-        if (window.innerWidth >= 768) {
-          hydratedLayers.liveSatellites = true;
-        }
         prevLayerRef.current = hydratedLayers;
         setLayerVisibility(hydratedLayers);
+        setObservatoryIntent(
+          hydratedLayers.space !== false ||
+          hydratedLayers.earthObservation !== false ||
+          hydratedLayers.liveSatellites !== false
+        );
       } catch {
         // Ignore malformed local data and keep defaults.
       }
@@ -403,6 +409,14 @@ export default function HomePage() {
   useEffect(() => {
     const prev = prevLayerRef.current;
 
+    if (
+      layerVisibility.space !== false ||
+      layerVisibility.earthObservation !== false ||
+      layerVisibility.liveSatellites !== false
+    ) {
+      setObservatoryIntent(true);
+    }
+
     if (prev.liveSatellites === false && layerVisibility.liveSatellites !== false) {
       emitMissionEvent("layer:satellites:activated");
     }
@@ -445,6 +459,7 @@ export default function HomePage() {
 
   const isDone = lobbyPhase === "done";
   const showUI = lobbyPhase === "ui" || isDone;
+  const observatoryActive = showUI && observatoryIntent && layerVisibility.space !== false;
   const headerTop = safe.headerTop;
   const headerSideInset = safe.sideInset;
   const headerBottom = headerTop + headerHeight;
@@ -458,6 +473,8 @@ export default function HomePage() {
   const guidedHeaderBottom = headerBottom + (layersExpanded ? 40 : 12);
   const hideMobileAuxOverlays = !safe.isDesktop && (layersExpanded || showGuidedTour);
   const mobileBottomInsetPx = safe.isDesktop ? safe.actionBottom : safe.actionBottom + 52;
+  const contextualCard = getContextualCardForYear(scrubYear);
+  const narrativePanelOpen = !!(selectedMarkerId || (contextualCard && !contextualCardDismissed));
 
   return (
     <main className="relative isolate h-full min-h-screen w-full max-w-full overflow-x-hidden overflow-y-hidden" style={{ backgroundColor: "#030405" }}>
@@ -593,35 +610,53 @@ export default function HomePage() {
           }}
           className="fixed z-50 rounded border border-copper/35 bg-bg/70 px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-copperSoft backdrop-blur hover:border-copper"
         >
-          SKIP BRIEFING · BOTTOM
+          Skip intro
         </button>
       )}
 
-      {/* Re-entry prompt — positioned below the header title card */}
+      {/* Re-entry prompt — anchored into the left archive column, below the header card. */}
       {reentryZone && isDone && (
-        <aside className="absolute left-1/2 top-[6.5rem] z-30 w-[min(92vw,420px)] -translate-x-1/2 rounded border border-copper/35 bg-bg/90 px-4 py-3 text-center backdrop-blur md:left-[55%] md:top-[5.5rem] md:translate-x-0">
+        <aside className="pointer-events-auto absolute left-3 right-3 top-[15.25rem] z-30 rounded border border-copper/35 bg-bg/90 px-4 py-3 text-left backdrop-blur md:left-6 md:right-auto md:top-[16.25rem] md:w-[420px]">
           <p className="font-display text-[12px] tracking-[0.18em] text-copperSoft">
             You left during {formatZoneForDisplay(reentryZone)}
           </p>
-          <button
-            type="button"
-            onClick={() => setReentryZone(null)}
-            className="mt-2 rounded border border-copper/30 px-2 py-1 text-[11px] uppercase tracking-[0.14em] text-muted hover:text-text"
-          >
-            Dismiss
-          </button>
+          <div className="mt-2 flex items-center justify-between gap-3">
+            <p className="text-[11px] uppercase tracking-[0.12em] text-muted/80">
+              Resume from the same deep-time zone or dismiss this prompt.
+            </p>
+            <button
+              type="button"
+              onClick={() => setReentryZone(null)}
+              className="rounded border border-copper/30 px-2 py-1 text-[11px] uppercase tracking-[0.14em] text-muted hover:text-text"
+            >
+              Dismiss
+            </button>
+          </div>
         </aside>
       )}
 
       {showUI && (
-        <div className="absolute right-3 top-3 z-40 md:right-6 md:top-6">
+        <div
+          className={`absolute right-3 top-3 flex items-center gap-2 md:top-6 ${showSettings ? "z-50" : "z-40"}`}
+          style={
+            narrativePanelOpen && safe.isDesktop
+              ? { right: "calc(35vw + 1rem)" }
+              : safe.isDesktop
+                ? { right: "1.5rem" }
+                : undefined
+          }
+        >
           <button
             type="button"
             onClick={() => setShowSettings((v) => !v)}
-            className="min-h-11 min-w-11 rounded border border-copper/35 bg-bg/75 px-2 text-[11px] uppercase tracking-[0.14em] text-copperSoft backdrop-blur-sm hover:border-copper"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded border border-copper/35 bg-bg/75 px-2 text-copperSoft backdrop-blur-sm hover:border-copper"
             aria-label="Settings"
+            title="Settings"
           >
-            ⚙
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <circle cx="12" cy="12" r="3" />
+              <path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+            </svg>
           </button>
           {showSettings && (
             <div className="mt-2 w-[min(92vw,340px)] border border-copper/30 bg-[#0A0806]/95 px-3 py-2">
@@ -753,25 +788,6 @@ export default function HomePage() {
               {"The community record.\nMemories the archive hasn't captured yet."}
             </span>
           </div>
-          {/* Moderation */}
-          <div className="group relative">
-            <button
-              type="button"
-              onClick={() => openPanel(activePanel === "moderation" ? null : "moderation")}
-              className={`action-nav-btn flex items-center gap-1 rounded px-2 py-1.5 text-[11px] uppercase tracking-[0.12em] transition-all duration-200 md:gap-1.5 md:px-3 md:py-2 md:text-[11px] md:tracking-[0.14em] ${
-                activePanel === "moderation"
-                  ? "bg-copper/20 text-copper border border-copper/40 shadow-[0_0_8px_rgba(184,115,51,0.2)]"
-                  : "text-copperSoft hover:text-copper hover:bg-copper/8 border border-transparent hover:border-copper/25 hover:shadow-[0_0_6px_rgba(184,115,51,0.15)]"
-              }`}
-            >
-              <span className="text-sm">🛡</span>
-              <span className="hidden sm:inline">Review</span>
-            </button>
-            <span className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 rounded bg-panel/95 border border-copper/20 px-2 py-0.5 text-[11px] text-muted/70 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-              Moderation queue
-            </span>
-          </div>
-
           {/* Breathing indicator — right side */}
           <div className="ml-1 h-1.5 w-1.5 rounded-full bg-copper/60 animate-[breathing_3s_ease-in-out_infinite_1.5s]" />
         </nav>
@@ -817,12 +833,32 @@ export default function HomePage() {
           onDone={() => setShowNkolosoCinematic(false)}
         />
       )}
-      {showUI && !hideMobileAuxOverlays && (
+      {showUI && !observatoryIntent && !hideMobileAuxOverlays && (
+        <aside className="pointer-events-auto absolute right-4 top-[6.5rem] z-20 hidden w-[min(320px,30vw)] overflow-hidden border border-copper/35 bg-[linear-gradient(135deg,rgba(184,115,51,0.12)_0%,rgba(12,18,24,0.92)_36%,rgba(21,72,52,0.22)_100%)] px-3 py-3 shadow-[0_0_24px_rgba(184,115,51,0.12)] backdrop-blur-md md:block">
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-[3px] bg-gradient-to-b from-copper via-[#d6a24a] to-[#2d8a57]" />
+          <p className="font-display text-[11px] uppercase tracking-[0.18em] text-[#f0bf72]">Second Lens</p>
+          <p className="mt-1 text-[12px] leading-relaxed text-[#f3e5cf]">
+            Start in the archive. Open the observatory only when you want present-day signals.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setObservatoryIntent(true);
+              setLayerVisibility((prev) => ({ ...prev, space: true }));
+            }}
+            className="mt-3 rounded border border-copper/45 bg-[rgba(184,115,51,0.08)] px-3 py-1.5 text-[11px] uppercase tracking-[0.14em] text-[#f0bf72] transition-colors hover:border-[#d6a24a] hover:bg-[rgba(184,115,51,0.14)]"
+          >
+            Observe the Present
+          </button>
+        </aside>
+      )}
+      {observatoryActive && !hideMobileAuxOverlays && (
         <SpaceSignal
-          enabled={layerVisibility.space !== false}
+          enabled={observatoryActive}
           earthObservationEnabled={layerVisibility.earthObservation !== false}
           liveSatellitesEnabled={layerVisibility.liveSatellites !== false}
           onEnableLiveSatellites={() => {
+            setObservatoryIntent(true);
             setLayerVisibility((prev) => ({ ...prev, space: true, liveSatellites: true }));
           }}
           onOpenMissionBuilder={() => openPanel("spaceMission")}
@@ -830,10 +866,8 @@ export default function HomePage() {
         />
       )}
 
-      {/* Sovereignty Stack — bottom-left, above LayersPanel, desktop only.
-          Flips Governance/Value/Infrastructure state as scrubber moves through epochs.
-          This is the argument, not decoration. */}
-      {showUI && !layersExpanded && <SovereigntyStack year={scrubYear} />}
+      {/* Sovereignty Stack — bottom-left, above MissionPanel, desktop only. Hidden during guided tour to avoid card stacking. */}
+      {showUI && !layersExpanded && !showGuidedTour && <SovereigntyStack year={scrubYear} />}
 
       {/* Story Compass — persistent "You Are Here" context indicator.
           Museum corner label aesthetic — a whisper, not a headline. */}
@@ -848,7 +882,7 @@ export default function HomePage() {
       {showUI && !hideMobileAuxOverlays && (
         <MissionPanel
           progress={missionProgress}
-          startExpanded={!guidedTourCompleted}
+          startExpanded={false}
           showPulseCue={guidedTourCompleted}
           onSetActiveMission={(missionId) => {
             setMissionProgress((prev) => {
@@ -985,12 +1019,6 @@ export default function HomePage() {
             onClose={() => setActivePanel(null)}
           />
         )}
-        {activePanel === "moderation" && (
-          <ModerationConsole
-            key="moderation"
-            onClose={() => setActivePanel(null)}
-          />
-        )}
         {activePanel === "contribute" && (
           <ContributionForm
             key="contribute"
@@ -1006,144 +1034,6 @@ export default function HomePage() {
     </main>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

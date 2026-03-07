@@ -199,7 +199,7 @@ export function NarrativePanel({
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: "10%", transition: { duration: 0.3 } }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className={`narrative-panel fixed bottom-0 right-0 z-30 h-[56vh] w-full overflow-hidden border-t bg-panel/95 p-5 backdrop-blur-md md:top-0 md:h-full md:w-[35vw] md:max-w-[540px] md:border-l md:border-t-0 md:p-7 block transition-colors duration-500 ${
+          className={`narrative-panel fixed bottom-0 right-0 z-[42] h-[56vh] w-full overflow-hidden border-t bg-panel/95 p-5 backdrop-blur-md md:top-0 md:h-full md:w-[35vw] md:max-w-[540px] md:border-l md:border-t-0 md:p-7 block transition-colors duration-500 ${
             contextualCard?.isFinale
               ? "border-copper/65"
               : "border-copper/30"
@@ -213,7 +213,7 @@ export function NarrativePanel({
               />
             )}
             <div className="mb-5 flex items-start justify-between gap-4">
-              <div className="border-b border-copper/15 pb-3">
+              <div className="border-b border-copper/15 pb-3 min-w-0">
                 <p className="text-[11px] uppercase tracking-[0.22em] text-copperSoft">
                   {marker
                     ? marker.tag
@@ -225,14 +225,15 @@ export function NarrativePanel({
                   {marker ? marker.epochLabel : contextualCard?.zone ?? ""}
                 </p>
               </div>
-              <div className="flex flex-wrap items-center justify-end gap-2">
+              <div className="flex flex-shrink-0 items-center gap-2">
                 {marker && narrative && (
                   <ExportBriefButton marker={marker} narrative={narrative} />
                 )}
                 <button
                   type="button"
                   onClick={marker ? onClose : onDismissContextualCard ?? onClose}
-                  className="min-h-11 rounded border border-copper/40 px-2 py-1 text-[11px] uppercase tracking-[0.16em] text-text hover:border-copper transition-colors duration-300"
+                  className="min-h-11 rounded border border-copper/40 px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-text hover:border-copper transition-colors duration-300"
+                  aria-label="Close panel"
                 >
                   Close
                 </button>

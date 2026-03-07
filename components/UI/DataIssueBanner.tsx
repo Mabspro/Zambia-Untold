@@ -33,7 +33,7 @@ export function DataIssueBanner() {
   if (!issues.length) return null;
 
   return (
-    <aside className="pointer-events-none absolute bottom-32 left-4 z-20 max-w-[min(90vw,720px)] rounded border border-[#ad3f31]/60 bg-[#2c110f]/90 px-3 py-2 text-[10px] uppercase tracking-[0.14em] text-[#efb5ad] backdrop-blur md:bottom-40 md:left-7">
+    <aside className="pointer-events-none absolute left-1/2 top-4 z-20 w-[min(44rem,calc(100vw-2rem))] -translate-x-1/2 rounded border border-[#ad3f31]/60 bg-[#2c110f]/92 px-3 py-2 text-[10px] uppercase tracking-[0.14em] text-[#efb5ad] shadow-[0_10px_30px_rgba(44,17,15,0.35)] backdrop-blur md:top-6">
       Data Layer Warning: {issueText}
     </aside>
   );

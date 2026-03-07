@@ -42,7 +42,7 @@ Each row covers one file or module: its purpose, active consumer(s), current hea
 | `components/Globe/LusakaParticleSwarm.tsx` | Cha-cha-cha civil disobedience particle swarm. Reads road network from `/data/lusaka-roads.geojson`, LTTB-downsampled to 2000 pts, radial expansion wave. | `Globe.tsx` | ✅ Healthy | Async GeoJSON load; empty-array fallback if fetch fails. Color gradient (crimson → copper) by distance. `alphaArrayRef` ref pattern avoids geometry recreation. |
 | `components/Globe/ProvinceHighlight.tsx` | Highlights the province associated with the active marker. | `Globe.tsx` | ⚠️ Needs attention | Fetches `/data/zambia-provinces.geojson`. Province name matching uses loose string comparison (`.replace(" ", "-")`). If province GeoJSON names drift from `MARKER_TO_PROVINCE` map, highlight silently fails. **Action:** add explicit unit test or validation step. |
 | `components/Globe/SovereigntyStackHUD.tsx` | In-geometry HUD (Drei `Html`) showing Governance/Value/Infrastructure state per year. Positioned relative to camera. | `Globe.tsx` | ✅ Healthy | `useFrame` positions group in camera-relative space. Pointer events disabled ✓. Renders into R3F canvas, not DOM overlay — preserves 60fps intent. |
-| `components/Globe/shaders/` | (Directory exists, no files found in audit.) | — | ⚠️ Needs attention | X-ray vertex/fragment shaders are currently inline strings in `Globe.tsx`. If additional shaders are added, migrate to this directory for discoverability. |
+| `components/Globe/shaders/` | GLSL shader files for Globe rendering. | `Globe.tsx` | ✅ Healthy | **Resolved TD-06 (March 2026):** `xray.vert` + `xray.frag` migrated here. `marker.vert`, `marker.frag`, `atmosphere.frag` also present. Webpack raw loader in `next.config.mjs` enables typed imports. |
 
 ---
 
@@ -68,7 +68,7 @@ Each row covers one file or module: its purpose, active consumer(s), current hea
 | File | Purpose | Consumers | Status | Notes / Actions |
 |------|---------|-----------|--------|-----------------|
 | `lib/deepTime.ts` | **Primary timeline model.** 8-zone segmented axis (4.5B BC → 2026 AD). Zone boundaries, bi-directional year↔position mapping, zone lookup, display formatters. | `TimeScrubber`, `epoch.ts`, `contextualEpochCards.ts`, `museumPassport.ts`, `app/page.tsx` | ✅ Healthy | This is the authoritative timeline module. ZONE boundaries are hardcoded constants — document before changing, as they affect scrubber feel across the entire experience. |
-| `lib/epoch.ts` | Marker activation helper (`isMarkerActive`). Previously: full asinh timeline model. | `TimeScrubber`, `GlobeMarker` | ⚠️ Deprecated (partial) | **Fixed (March 2026):** file refactored with clear active/deprecated sections and JSDoc `@deprecated` tags. **Next cleanup pass:** delete `EPOCH_MIN`, `EPOCH_MAX`, `yearToNormalized`, `normalizedToYear`, `yearToSlider`, `sliderToYear`, `formatEpochLabel`, `markerPositionOnTrack`. Only `isMarkerActive` should survive. |
+| `lib/epoch.ts` | Marker activation helper (`isMarkerActive`). | `TimeScrubber`, `GlobeMarker` | ✅ Healthy | **TD-01 resolved (March 2026):** All deprecated asinh-scale exports deleted. Only `isMarkerActive` remains. File is now a single clean export. |
 | `lib/epochPalette.ts` | Returns globe tint color + opacity for a given year. Implements Colonial cool, Sovereign copper return. | `Globe.tsx` | ✅ Healthy | Clean, simple. Colonial epoch (#3a4a5c) distinct as spec requires ✓. Threshold at `year < -10000` returns zero opacity for pre-historic epochs — intentional (X-ray mode takes over). |
 | `lib/camera.ts` | Coordinate conversions: lat/lng → THREE.Vector3, camera positioning for Africa center + markers, quadratic arc interpolation. | `Globe.tsx`, `CameraRig.tsx`, `ZambeziLayer.tsx`, `KatangaFormationLayer.tsx`, etc. | ✅ Healthy | Standard spherical math. `quadraticArc` for cinematic fly-to ✓. `AFRICA_CENTER` is a named constant (`-15, 28`) — lat/lng of central Zambia. |
 | `lib/geo.ts` | GeoJSON → THREE.Vector3[] conversion for Polygon and MultiPolygon geometries. `MARKER_TO_PROVINCE` mapping. | `ZambiaBoundary.tsx`, `ProvinceHighlight.tsx` | ⚠️ Needs attention | `MARKER_TO_PROVINCE` hardcoded — must be kept in sync with `data/markers.ts` IDs and GeoJSON province names. No validation that province names match the loaded GeoJSON. **Action:** add type safety or runtime check. |
@@ -126,10 +126,12 @@ Each row covers one file or module: its purpose, active consumer(s), current hea
 
 | ID | File | Issue | Priority | Action |
 |----|------|-------|----------|--------|
-| TD-01 | `lib/epoch.ts` | Legacy asinh-model exports co-exist with active `isMarkerActive`. Deprecation markers added March 2026. | Low | Remove deprecated exports next cleanup pass. |
 | TD-05 | `lib/geo.ts` | `MARKER_TO_PROVINCE` not validated against loaded GeoJSON; silently fails. | Medium | Add validation or runtime assertion at dev time. |
-| TD-06 | `components/Globe/Globe.tsx` | X-ray shaders are inline template literal strings. `components/Globe/shaders/` exists but empty. | Low | Migrate shader strings to `.glsl` files in `shaders/` for maintainability. |
-| TD-07 | `components/Globe/GlobeMarker.tsx` | `new THREE.Vector3(...)` instantiated on every `useFrame` call. Fine at 6 markers, worth refactoring if marker count grows significantly. | Low | Hoist to a persistent ref at top of component. |
+| TD-07 | `components/Globe/GlobeMarker.tsx` | `new THREE.Vector3(...)` instantiated on every `useFrame` call. Fine at current marker count, worth refactoring if markers grow significantly. | Low | Hoist to a persistent ref at top of component. |
+
+> **Resolved March 2026:**
+> - **TD-01** (`lib/epoch.ts`) — All deprecated asinh-scale exports removed. Only `isMarkerActive` remains. ✅
+> - **TD-06** (`Globe.tsx`) — XRAY shaders migrated to `components/Globe/shaders/xray.vert` + `xray.frag`. Webpack raw loader added in `next.config.mjs`. TypeScript declarations in `glsl.d.ts`. ✅
 
 ---
 
@@ -152,9 +154,7 @@ All A3 deliverables shipped and validated:
 3. **Typecheck + lint gate** (`npm run validate`) before each phase merge.
 
 ### Remaining technical debt (before Phase B closes)
-4. **TD-01** — Delete deprecated exports from `lib/epoch.ts`. Only `isMarkerActive` should remain.
-5. **TD-05** — Add `MARKER_TO_PROVINCE` validation against loaded province GeoJSON in `lib/geo.ts`.
-6. **TD-06** — Migrate inline XRAY shader strings to `components/Globe/shaders/*.glsl` for maintainability.
+4. **TD-05** — Add `MARKER_TO_PROVINCE` validation against loaded province GeoJSON in `lib/geo.ts`. *(TD-01 and TD-06 resolved March 2026.)*
 
 ### Data layers (Appendix E — separate sprint after Phase B)
 7. Craton polygons (BGS World Geology GeoJSON — free), Gondwana outline (PALEOMAP — free).

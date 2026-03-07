@@ -157,6 +157,36 @@ Use this file as a lightweight continuity layer to reduce regressions across par
   - Persist reviewer metadata (`reviewed_by`, `reviewed_at`, `reviewer_notes`)
   - Add queue pagination/search and batch actions for scale
 
+## 2026-03-06 - TD-01/TD-06 Cleanup + Museum-First Enforcement + Content Upgrade
+
+- Date: 2026-03-06
+- Area: Globe rendering pipeline, data layer integrity, museum-first architecture
+- Intent: Resolve TD-01 (epoch.ts deprecated exports), TD-06 (inline GLSL shaders), enforce museum-first layer defaults in Globe.tsx, gate community API fetch on layer visibility, upgrade ingombe-ilede academic sources
+- Invariants touched:
+  - Data/backend safety: community/approved fetch now gated — no API calls unless community layer enabled
+  - Museum-first principle: Globe.tsx DEFAULT_LAYERS now matches app/page.tsx (space: false, earthObservation: false)
+  - Shader maintainability: xray shaders now live in /components/Globe/shaders/ directory
+- Files changed:
+  - `lib/epoch.ts` — deleted all deprecated asinh-scale exports (TD-01 resolved); only `isMarkerActive` remains
+  - `components/Globe/Globe.tsx` — removed inline XRAY_VERTEX/XRAY_FRAGMENT strings; imports from `./shaders/xray.vert` and `./shaders/xray.frag`; fixed DEFAULT_LAYERS to museum-first (space/EO off); gated `loadApproved` useEffect on `layerVisibility.community`
+  - `components/Globe/shaders/xray.vert` — new file: XRAY vertex shader (TD-06 resolved)
+  - `components/Globe/shaders/xray.frag` — new file: XRAY fragment shader (TD-06 resolved)
+  - `next.config.mjs` — added webpack `asset/source` rule for `.glsl/.vert/.frag` raw imports
+  - `glsl.d.ts` — new file: TypeScript module declarations for `*.vert`, `*.frag`, `*.glsl` imports
+  - `data/narratives.ts` — replaced ingombe-ilede Britannica/Wikipedia sources with Fagan/Phillipson academic citations (1968/1969, Journal of African History)
+- Risk:
+  - `loadApproved` gate change: if `community` layer defaults to `true`, behavior is unchanged; only affects users/envs where community layer is explicitly disabled
+  - Shader file import requires webpack raw loader (added to next.config.mjs); if PWA wrapper interferes, test with `npm run build:no-pwa`
+  - TD-01 cleanup: confirm no external scripts reference the deleted asinh exports before removing from any published package
+- Regression checks run:
+  - typecheck: pending (local EPERM environment)
+  - lint: pending (local EPERM environment)
+  - build: pending (local EPERM environment — same pre-existing blocker)
+- Follow-ups:
+  - Verify `.vert`/`.frag` imports resolve correctly in `npm run typecheck` after glsl.d.ts inclusion
+  - Add `glsl.d.ts` reference to `tsconfig.json` if typecheck does not auto-pick it up
+  - TECH_AUDIT_MATRIX.md updated: TD-01 and TD-06 rows removed
+
 ## 2026-03-06 - Comprehensive Code State Handoff Refresh
 
 - Date: 2026-03-06

@@ -160,9 +160,11 @@ export function ExportBriefButton({ marker, narrative }: ExportBriefButtonProps)
     <button
       onClick={handleExport}
       disabled={isExporting}
+      aria-label={isExporting ? "Generating export" : "Export brief as image"}
+      title="Export this exhibit as a downloadable brief"
       className={`min-h-11 flex items-center gap-2 rounded border border-copper/30 bg-copper/5 px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-copper transition-colors duration-300 hover:bg-copper/15 disabled:opacity-50`}
     >
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
         <polyline points="7 10 12 15 17 10" />
         <line x1="12" y1="15" x2="12" y2="3" />

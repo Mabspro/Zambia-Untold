@@ -13,6 +13,23 @@ type EarthImageryPayload = {
   imageUrl: string;
 };
 
+/**
+ * Probe Landsat 8 (NASA Earth Imagery API) first via the backend route.
+ * If the backend returns 503 (missing NASA_API_KEY or upstream failure),
+ * fall back to GIBS (MODIS) via /api/earth/imagery.
+ */
+async function fetchImageryUrl(): Promise<string | null> {
+  const landsatRes = await fetch("/api/earth/imagery/landsat", { cache: "no-store" });
+  if (landsatRes.ok) {
+    const data = (await landsatRes.json()) as EarthImageryPayload;
+    if (data.imageUrl) return data.imageUrl;
+  }
+  const gibsRes = await fetch("/api/earth/imagery", { cache: "no-store" });
+  if (!gibsRes.ok) return null;
+  const data = (await gibsRes.json()) as EarthImageryPayload;
+  return data.imageUrl ?? null;
+}
+
 const ZAMBIA_CENTER = { lat: -13.2, lng: 27.9 };
 
 export function EarthObservationLayer({ active }: EarthObservationLayerProps) {
@@ -31,15 +48,13 @@ export function EarthObservationLayer({ active }: EarthObservationLayerProps) {
 
     const load = async () => {
       try {
-        const res = await fetch("/api/earth/imagery", { cache: "no-store" });
-        if (!res.ok) return;
-        const payload = (await res.json()) as EarthImageryPayload;
-        if (!payload.imageUrl || cancelled) return;
+        const imageUrl = await fetchImageryUrl();
+        if (!imageUrl || cancelled) return;
 
         const loader = new THREE.TextureLoader();
         loader.crossOrigin = "anonymous";
         loader.load(
-          payload.imageUrl,
+          imageUrl,
           (texture) => {
             if (cancelled) return;
             texture.colorSpace = THREE.SRGBColorSpace;

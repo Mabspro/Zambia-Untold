@@ -25,6 +25,8 @@ import { ZambeziLayer } from "./ZambeziLayer";
 import { KatangaFormationLayer } from "./KatangaFormationLayer";
 import { EarthObservationLayer } from "./EarthObservationLayer";
 import type { LayerVisibility } from "@/lib/types";
+import XRAY_VERTEX from "./shaders/xray.vert";
+import XRAY_FRAGMENT from "./shaders/xray.frag";
 
 type GlobeProps = {
   selectedMarker: Marker | null;
@@ -326,50 +328,19 @@ function CommunityMissionTrackLayer({
     </group>
   );
 }
-const XRAY_VERTEX = `
-  varying vec3 vWorldPosition;
-  varying vec3 vWorldNormal;
-  void main() {
-    vec4 worldPos = modelMatrix * vec4(position, 1.0);
-    vWorldPosition = worldPos.xyz;
-    vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`;
-
-const XRAY_FRAGMENT = `
-  uniform float uDissolve;
-  uniform float uTerrainFreq;
-  uniform float uTerrainBand;
-  varying vec3 vWorldPosition;
-  varying vec3 vWorldNormal;
-  void main() {
-    vec3 darkBase = vec3(0.04, 0.05, 0.06);
-    vec3 copper = vec3(0.78, 0.53, 0.18);
-    vec3 worldScaled = vWorldPosition * uTerrainFreq;
-    float terrainField = abs(
-      (sin(worldScaled.x * 1.25) + sin(worldScaled.y * 1.1) + sin(worldScaled.z * 1.4)) * 0.333
-    );
-    float contour = smoothstep(0.25, 0.9, terrainField * uTerrainBand);
-    float slope = 1.0 - abs(dot(vWorldNormal, vec3(0.0, 1.0, 0.0)));
-    float relief = max(contour, slope * 0.6);
-    float dissolveNoise = abs(
-      sin(vWorldPosition.x * 11.1 + vWorldPosition.y * 8.7 + vWorldPosition.z * 9.3)
-    );
-    float dissolveMask = smoothstep(dissolveNoise - 0.16, dissolveNoise + 0.16, uDissolve);
-    vec3 color = mix(darkBase, copper, relief);
-    float opacity = dissolveMask * uDissolve;
-    gl_FragColor = vec4(color, opacity);
-  }
-`;
-
+/**
+ * DEFAULT_LAYERS for Scene — museum-first, no live observatory stack on load.
+ * Space and EarthObservation off so no observatory APIs fire unless user opts in.
+ * Single source of truth lives in app/page.tsx; this fallback matches that policy.
+ * To restore: set NEXT_PUBLIC_EPOCH_OVERLAY=1
+ */
 const DEFAULT_LAYERS: LayerVisibility = {
   boundary: true,
   province: true,
   particles: true,
   zambezi: true,
-  space: true,
-  earthObservation: true,
+  space: false,
+  earthObservation: false,
   liveSatellites: false,
   community: true,
 };
@@ -553,42 +524,79 @@ function Scene({
       clearInterval(intervalId);
     };
   }, [layerVisibility.liveSatellites, layerVisibility.space]);
+  /**
+   * Approved community memories load only when the archive community layer is active.
+   * This keeps museum-first entry light and avoids public archive polling when hidden.
+   */
   useEffect(() => {
+    if (layerVisibility.community === false) {
+      setApprovedContributions([]);
+      return;
+    }
+
     let cancelled = false;
 
-    const loadApproved = async () => {
+    const loadApprovedCommunity = async () => {
       try {
-        const [communityRes, missionRes] = await Promise.all([
-          fetch("/api/community/approved", { cache: "no-store" }),
-          fetch("/api/space/mission/approved", { cache: "no-store" }),
-        ]);
-
-        if (!communityRes.ok || !missionRes.ok || cancelled) return;
+        const communityRes = await fetch("/api/community/approved", { cache: "no-store" });
+        if (!communityRes.ok || cancelled) return;
 
         const communityPayload = (await communityRes.json()) as {
           items?: CommunityContributionSample[];
         };
-        const missionPayload = (await missionRes.json()) as {
-          items?: CommunityMissionSample[];
-        };
 
         if (cancelled) return;
         setApprovedContributions(Array.isArray(communityPayload.items) ? communityPayload.items.slice(0, 140) : []);
-        setApprovedMissions(Array.isArray(missionPayload.items) ? missionPayload.items.slice(0, 48) : []);
       } catch {
-        // Keep prior approved samples while offline.
+        // Keep prior approved community samples while offline.
       }
     };
 
-    loadApproved();
-    const intervalId = setInterval(loadApproved, 120_000);
+    loadApprovedCommunity();
+    const intervalId = setInterval(loadApprovedCommunity, 120_000);
 
     return () => {
       cancelled = true;
       clearInterval(intervalId);
     };
-  }, []);
+  }, [layerVisibility.community]);
 
+  /**
+   * Approved community mission tracks belong to the space lens, not the archive layer.
+   * They should only load when space is explicitly enabled.
+   */
+  useEffect(() => {
+    if (layerVisibility.space === false) {
+      setApprovedMissions([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadApprovedMissions = async () => {
+      try {
+        const missionRes = await fetch("/api/space/mission/approved", { cache: "no-store" });
+        if (!missionRes.ok || cancelled) return;
+
+        const missionPayload = (await missionRes.json()) as {
+          items?: CommunityMissionSample[];
+        };
+
+        if (cancelled) return;
+        setApprovedMissions(Array.isArray(missionPayload.items) ? missionPayload.items.slice(0, 48) : []);
+      } catch {
+        // Keep prior approved mission samples while offline.
+      }
+    };
+
+    loadApprovedMissions();
+    const intervalId = setInterval(loadApprovedMissions, 120_000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
+  }, [layerVisibility.space]);
   useEffect(() => {
     if (!focusAfricaDuringLobby) {
       lobbyFocusDoneRef.current = false;
@@ -919,6 +927,7 @@ export function Globe({
     </Canvas>
   );
 }
+
 
 
 

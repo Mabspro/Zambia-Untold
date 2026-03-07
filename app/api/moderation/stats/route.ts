@@ -1,15 +1,21 @@
 import { NextResponse } from "next/server";
 import { countSupabaseRows, hasSupabaseServerWrite } from "@/lib/server/supabase";
+import { isModerationAuthorized } from "@/lib/server/requestAuth";
 
 const ISIBALO_TABLE = process.env.SUPABASE_ISIBALO_TABLE ?? "isibalo_submissions";
 const MISSIONS_TABLE = process.env.SUPABASE_SPACE_MISSIONS_TABLE ?? "space_mission_proposals";
 
-export async function GET() {
+export async function GET(request: Request) {
   const generatedAt = new Date().toISOString();
+
+  if (!isModerationAuthorized(request)) {
+    return NextResponse.json({ ok: false, error: "unauthorized", generatedAt }, { status: 401 });
+  }
 
   if (!hasSupabaseServerWrite()) {
     return NextResponse.json(
       {
+        ok: true,
         generatedAt,
         sourceStatus: "fallback",
         source: "local",
@@ -33,6 +39,7 @@ export async function GET() {
 
     return NextResponse.json(
       {
+        ok: true,
         generatedAt,
         sourceStatus: "live",
         source: "supabase",
@@ -52,6 +59,7 @@ export async function GET() {
   } catch {
     return NextResponse.json(
       {
+        ok: true,
         generatedAt,
         sourceStatus: "fallback",
         source: "local",
