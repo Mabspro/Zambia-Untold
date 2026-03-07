@@ -148,6 +148,9 @@ export function SpaceSignal({
             <p className="text-[11px] uppercase tracking-[0.14em] text-copper/85">
               Live Satellites · Over Zambia Now: {norad.counts.overZambiaNow}
             </p>
+            <p className="mt-0.5 text-[10px] uppercase tracking-[0.1em] text-muted/65">
+              Source: {norad.sourceStatus === "live" ? "CelesTrak/NORAD propagated sample" : "Fallback orbital model"}
+            </p>
             {liveSatellitesEnabled && overNow.length > 0 ? (
               <div className="mt-1 space-y-0.5">
                 {overNow.map((sat) => (
@@ -176,6 +179,9 @@ export function SpaceSignal({
         {(approvedCommunity || approvedMissions) && (
           <div className="mt-2 border border-copper/20 bg-panel/55 px-2 py-1.5">
             <p className="text-[11px] uppercase tracking-[0.14em] text-copper/80">Living Archive · Approved</p>
+            <p className="mt-0.5 text-[10px] uppercase tracking-[0.1em] text-muted/65">
+              Source: Supabase approved archive records
+            </p>
             <div className="mt-1 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[11px] text-muted/80">
               <span>Isibalo: {approvedCommunity?.count ?? 0}</span>
               <span>Missions: {approvedMissions?.count ?? 0}</span>
@@ -187,6 +193,9 @@ export function SpaceSignal({
           <div className="mt-2 border border-copper/20 bg-panel/55 px-2 py-1.5">
             <p className="text-[11px] uppercase tracking-[0.14em] text-copper/85">
               Earth Observation · Open Events in Zambia Region: {earth.count}
+            </p>
+            <p className="mt-0.5 text-[10px] uppercase tracking-[0.1em] text-muted/65">
+              Source: {earth.sourceStatus === "live" ? earth.source : "Fallback earth observation feed"}
             </p>
             {earthEvents.length > 0 ? (
               <div className="mt-1 space-y-0.5">
@@ -252,6 +261,9 @@ export function SpaceSignal({
                 <span>Mars: {Math.round(data.earthMarsDistanceKm / 1_000_000)}M km</span>
                 <span>Archive: {archiveCount}</span>
               </div>
+              <p className="mt-1 text-[10px] uppercase tracking-[0.1em] text-muted/65">
+                ISS: wheretheiss.at · Sats: CelesTrak/NORAD · EO: NASA feeds
+              </p>
               <div className="mt-1.5 flex items-center justify-between">
                 <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-muted/75">
                   {data.sourceStatus === "live" ? "Live" : "Fallback"}
