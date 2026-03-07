@@ -167,10 +167,26 @@ function LiveSatelliteLayer({ active, satellites }: LiveSatelliteLayerProps) {
     if (!active) setSelected(null);
   }, [active]);
 
+  useEffect(() => {
+    if (!selected) return;
+
+    const stillPresent = satellites.some((sat) => sat.name === selected.name);
+    if (!stillPresent) {
+      setSelected(null);
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setSelected(null);
+    }, 4500);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [satellites, selected]);
+
   if (!active || satellites.length === 0) return null;
 
   return (
-    <group>
+    <group onPointerMissed={() => setSelected(null)}>
       {satellites.map((sat) => {
         const radius = THREE.MathUtils.clamp(1 + sat.altitudeKm / 45000, 1.03, 1.26);
         const p = latLngToVector3(sat.latitude, sat.longitude, radius);
