@@ -12,10 +12,10 @@ import { getCachedOrRefresh } from "@/lib/server/memoryCache";
 const CELESTRAK_TLE_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=tle";
 const WHERETHEISS_BASE = "https://api.wheretheiss.at/v1/satellites";
 const MAX_PROPAGATION_SET = 3000;
-const CACHE_KEY = "space:norad:analysis";
+const CACHE_KEY = "space:norad:tle";
 
-const CACHE_TTL_MS = 60_000;
-const CACHE_STALE_MS = 6 * 60_000;
+const CACHE_TTL_MS = 2 * 60 * 60_000;
+const CACHE_STALE_MS = 8 * 60 * 60_000;
 
 const CURATED_SATELLITES = [
   { id: 25544, name: "ISS" },
@@ -63,6 +63,11 @@ type NoradAnalysis = {
     nearZambiaNow: number;
   };
   sample: TrackSample[];
+};
+
+type CachedTlePayload = {
+  source: string;
+  text: string;
 };
 
 type CuratedSatelliteLive = {
@@ -183,7 +188,7 @@ function analyze(entries: TLEEntry[], now: Date) {
   };
 }
 
-async function loadNoradAnalysis(): Promise<NoradAnalysis> {
+async function loadTleText(): Promise<CachedTlePayload> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 12_000);
 
@@ -198,23 +203,11 @@ async function loadNoradAnalysis(): Promise<NoradAnalysis> {
     }
 
     const text = await res.text();
-    const parsed = parseTLE(text);
-    const analysis = analyze(parsed, new Date());
-
     return {
       source: "celestrak active tle + sgp4",
-      counts: {
-        totalParsed: analysis.totalParsed,
-        analyzed: analysis.analyzed,
-        propagated: analysis.propagated,
-        overZambiaNow: analysis.overZambiaNow,
-        nearZambiaNow: analysis.nearZambiaNow,
-      },
-      sample: analysis.sample,
+      text,
     };
   } catch {
-    const curated = await loadCuratedOrbitSample();
-    if (curated) return curated;
     throw new Error("No live orbital source available");
   } finally {
     clearTimeout(timeout);
@@ -310,18 +303,29 @@ function fallback(nowIso: string) {
 
 export async function GET() {
   try {
-    const cached = await getCachedOrRefresh(CACHE_KEY, loadNoradAnalysis, {
+    const cached = await getCachedOrRefresh(CACHE_KEY, loadTleText, {
       ttlMs: CACHE_TTL_MS,
       staleMs: CACHE_STALE_MS,
     });
+    const parsed = parseTLE(cached.data.text);
+    const analysis = analyze(parsed, new Date());
 
     return NextResponse.json(
       {
-        generatedAt: cached.generatedAt,
+        generatedAt: new Date().toISOString(),
         sourceStatus: cached.sourceStatus,
-        source: cached.data.source,
-        counts: cached.data.counts,
-        sample: cached.data.sample,
+        source:
+          cached.sourceStatus === "live"
+            ? `${cached.data.source} · local propagation from cached elements`
+            : `${cached.data.source} · stale cached elements propagated locally`,
+        counts: {
+          totalParsed: analysis.totalParsed,
+          analyzed: analysis.analyzed,
+          propagated: analysis.propagated,
+          overZambiaNow: analysis.overZambiaNow,
+          nearZambiaNow: analysis.nearZambiaNow,
+        },
+        sample: analysis.sample,
       },
       {
         headers: {
@@ -330,11 +334,32 @@ export async function GET() {
       }
     );
   } catch {
+    try {
+      const curated = await loadCuratedOrbitSample();
+      if (!curated) {
+        throw new Error("No curated orbit sample available");
+      }
+      return NextResponse.json(
+        {
+          generatedAt: new Date().toISOString(),
+          sourceStatus: "fallback" as const,
+          source: curated.source,
+          counts: curated.counts,
+          sample: curated.sample,
+        },
+        {
+          headers: {
+            "Cache-Control": "public, max-age=15, stale-while-revalidate=180",
+          },
+        }
+      );
+    } catch {
     const nowIso = new Date().toISOString();
     return NextResponse.json(fallback(nowIso), {
       headers: {
         "Cache-Control": "no-store",
       },
     });
+    }
   }
 }

@@ -15,6 +15,7 @@ import {
   targetFromMarker,
 } from "@/lib/camera";
 import { lttbDownsample, type LTTBPoint } from "@/lib/lttb";
+import { getSatelliteInterpretation } from "@/lib/live/satelliteInterpretation";
 import { GlobeMarker } from "./GlobeMarker";
 import { CameraRig } from "./CameraRig";
 import { FlyToPin } from "./FlyToPin";
@@ -205,6 +206,7 @@ function LiveSatelliteNode({
   const haloRef = useRef<THREE.Mesh>(null);
   const pulseRef = useRef<THREE.Mesh>(null);
   const phase = useMemo(() => getSatellitePhase(sat.name), [sat.name]);
+  const interpretation = useMemo(() => getSatelliteInterpretation(sat.name), [sat.name]);
   const radius = THREE.MathUtils.clamp(1 + sat.altitudeKm / 45000, 1.03, 1.26);
   const p = latLngToVector3(sat.latitude, sat.longitude, radius);
   const baseSize = selectedNow ? 0.0145 : hoveredNow ? 0.013 : 0.0115;
@@ -263,9 +265,11 @@ function LiveSatelliteNode({
         <meshBasicMaterial color="#6fe6ff" transparent opacity={0.84} />
       </mesh>
       {selectedNow && (
-        <Html center distanceFactor={8}>
-          <div className="rounded border border-[#39d8ff]/45 bg-[rgba(3,10,14,0.92)] px-2 py-1 text-[9px] uppercase tracking-[0.12em] text-[#c8fbff] whitespace-nowrap shadow-[0_0_18px_rgba(57,216,255,0.18)]">
-            {sat.name} · {Math.round(sat.altitudeKm)} km
+        <Html center distanceFactor={4.8}>
+          <div className="w-[148px] rounded border border-[#39d8ff]/45 bg-[rgba(3,10,14,0.94)] px-2 py-1.5 text-center text-[#c8fbff] shadow-[0_0_18px_rgba(57,216,255,0.18)] md:w-[190px] md:px-2.5 md:py-2">
+            <p className="text-[8px] uppercase tracking-[0.12em] text-[#f3feff] md:text-[10px] md:tracking-[0.14em]">{sat.name}</p>
+            <p className="mt-1 text-[7px] uppercase tracking-[0.08em] text-[#8feeff] md:text-[9px] md:tracking-[0.12em]">{interpretation.category}</p>
+            <p className="mt-1 text-[8px] leading-snug text-[#c8fbff]/85 md:text-[10px]">{Math.round(sat.altitudeKm)} km altitude</p>
           </div>
         </Html>
       )}

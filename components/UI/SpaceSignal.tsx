@@ -1,6 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  getSatelliteConfidenceLabel,
+  getSatelliteInterpretation,
+  getSatelliteSignalNote,
+} from "@/lib/live/satelliteInterpretation";
 
 type SpaceSignalPayload = {
   generatedAt: string;
@@ -62,6 +67,11 @@ function isSatelliteNearZambia(sample: { latitude: number; longitude: number }) 
     sample.longitude >= 12 &&
     sample.longitude <= 45
   );
+}
+
+function renderSatelliteLabel(sample: { name: string; altitudeKm: number }) {
+  const interpretation = getSatelliteInterpretation(sample.name);
+  return `${sample.name} - ${interpretation.category} - ${Math.round(sample.altitudeKm)} km`;
 }
 
 type SpaceSignalProps = {
@@ -153,6 +163,8 @@ export function SpaceSignal({
   const earthEvents = earth?.events.slice(0, 3) ?? [];
   const archiveCount = (approvedCommunity?.count ?? 0) + (approvedMissions?.count ?? 0);
   const loading = !data;
+  const satelliteConfidence = norad ? getSatelliteConfidenceLabel(norad.sourceStatus) : "Fallback model";
+  const satelliteSignalNote = norad ? getSatelliteSignalNote(norad.sourceStatus) : getSatelliteSignalNote("fallback");
 
   return (
     <>
@@ -216,11 +228,23 @@ export function SpaceSignal({
                 <p className="mt-1 text-[11px] uppercase tracking-[0.1em] text-muted/65">
                   Source: {norad.sourceStatus === "live" ? "CelesTrak/NORAD propagated sample" : "Fallback orbital model"}
                 </p>
+                <div className="mt-2 space-y-1 border-t border-copper/10 pt-2">
+                  <p className="text-[11px] uppercase tracking-[0.1em] text-[#8feeff]">
+                    Confidence: {satelliteConfidence}
+                  </p>
+                  <p className="text-[12px] leading-relaxed text-muted/85">
+                    Signal: these positions are estimated from public orbital models, not live camera footage.
+                  </p>
+                  <p className="text-[12px] leading-relaxed text-muted/75">
+                    Why it matters: Zambia sits inside the same orbital layer that supports observation, timing, and communications infrastructure.
+                  </p>
+                  <p className="text-[11px] leading-relaxed text-muted/65">{satelliteSignalNote}</p>
+                </div>
                 {liveSatellitesEnabled && (satelliteScope === "region" ? regionalNow.length > 0 : overNow.length > 0) ? (
                   <div className="mt-2 space-y-1">
                     {(satelliteScope === "region" ? regionalNow : overNow).map((sat) => (
                       <p key={`${sat.name}-${sat.latitude.toFixed(2)}-${sat.longitude.toFixed(2)}`} className="text-[12px] text-muted/80">
-                        {sat.name} · {Math.round(sat.altitudeKm)} km
+                        {renderSatelliteLabel(sat)}
                       </p>
                     ))}
                   </div>
@@ -376,6 +400,11 @@ export function SpaceSignal({
                   ? "Observatory feed loading"
                   : "ISS: wheretheiss.at · Sats: CelesTrak/NORAD · EO: NASA feeds"}
               </p>
+              {!loading && norad && (
+                <p className="mt-2 text-[12px] leading-relaxed text-muted/80">
+                  {satelliteConfidence}. These are orbital estimates from public tracking data rather than live camera views.
+                </p>
+              )}
               <div className="mt-2 flex items-center justify-between gap-2">
                 <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-muted/75">
                   {loading ? "Loading" : data.sourceStatus === "live" ? "Live" : "Fallback"}

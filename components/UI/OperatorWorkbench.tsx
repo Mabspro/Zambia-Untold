@@ -65,12 +65,9 @@ type ModerationQueuePayload = {
 type ReviewStatus = "approved" | "rejected" | "pending";
 type QueueTarget = "community" | "mission";
 
-const TOKEN_KEY = "zambia-untold:operator-token";
-
 function buildHeaders(token: string) {
   return {
     "x-operator-token": token,
-    "x-moderation-token": token,
     authorization: token ? `Bearer ${token}` : "",
   };
 }
@@ -141,18 +138,6 @@ export function OperatorWorkbench() {
   }, [token]);
 
   useEffect(() => {
-    try {
-      const stored = window.sessionStorage.getItem(TOKEN_KEY);
-      if (stored) {
-        setToken(stored);
-        setTokenReady(true);
-      }
-    } catch {
-      // Ignore storage errors.
-    }
-  }, []);
-
-  useEffect(() => {
     if (tokenReady && token.trim()) {
       void load(token.trim());
     }
@@ -165,22 +150,12 @@ export function OperatorWorkbench() {
       setError("Enter operator token.");
       return;
     }
-    try {
-      window.sessionStorage.setItem(TOKEN_KEY, trimmed);
-    } catch {
-      // Ignore storage errors.
-    }
     setToken(trimmed);
     setTokenReady(true);
     setError(null);
   };
 
   const clear = () => {
-    try {
-      window.sessionStorage.removeItem(TOKEN_KEY);
-    } catch {
-      // Ignore storage errors.
-    }
     setToken("");
     setTokenReady(false);
     setDiagnostics(null);

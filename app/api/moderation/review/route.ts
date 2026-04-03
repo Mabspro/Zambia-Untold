@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { hasSupabaseServerWrite, updateSupabaseRows } from "@/lib/server/supabase";
+import { isModerationAuthorized } from "@/lib/server/requestAuth";
 
 type Body = {
   target?: "community" | "mission";
@@ -9,25 +10,8 @@ type Body = {
 
 const ISIBALO_TABLE = process.env.SUPABASE_ISIBALO_TABLE ?? "isibalo_submissions";
 const MISSIONS_TABLE = process.env.SUPABASE_SPACE_MISSIONS_TABLE ?? "space_mission_proposals";
-const MODERATION_API_TOKEN = process.env.MODERATION_API_TOKEN;
-
-function isAuthorized(request: Request): boolean {
-  if (!MODERATION_API_TOKEN) return false;
-
-  const headerToken = request.headers.get("x-moderation-token")?.trim();
-  if (headerToken && headerToken === MODERATION_API_TOKEN) return true;
-
-  const bearer = request.headers.get("authorization")?.trim();
-  if (bearer?.toLowerCase().startsWith("bearer ")) {
-    const token = bearer.slice(7).trim();
-    if (token && token === MODERATION_API_TOKEN) return true;
-  }
-
-  return false;
-}
-
 export async function POST(req: Request) {
-  if (!isAuthorized(req)) {
+  if (!isModerationAuthorized(req)) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
 

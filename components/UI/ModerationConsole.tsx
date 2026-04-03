@@ -35,8 +35,6 @@ type ModerationQueuePayload = {
   items: CommunityQueueItem[] | MissionQueueItem[];
 };
 
-const TOKEN_KEY = "zambia-untold:moderation-token";
-
 type ModerationConsoleProps = {
   onClose: () => void;
 };
@@ -51,18 +49,6 @@ export function ModerationConsole({ onClose }: ModerationConsoleProps) {
   const [busyId, setBusyId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [lastSync, setLastSync] = useState<string | null>(null);
-
-  useEffect(() => {
-    try {
-      const stored = window.sessionStorage.getItem(TOKEN_KEY);
-      if (stored) {
-        setToken(stored);
-        setTokenReady(true);
-      }
-    } catch {
-      // Ignore storage errors.
-    }
-  }, []);
 
   const loadQueue = useCallback(async () => {
     if (!tokenReady || !token.trim()) return;
@@ -106,22 +92,12 @@ export function ModerationConsole({ onClose }: ModerationConsoleProps) {
       setError("Enter moderation token.");
       return;
     }
-    try {
-      window.sessionStorage.setItem(TOKEN_KEY, trimmed);
-    } catch {
-      // Session storage may be blocked; continue with in-memory token.
-    }
     setToken(trimmed);
     setTokenReady(true);
     setError(null);
   };
 
   const clearToken = () => {
-    try {
-      window.sessionStorage.removeItem(TOKEN_KEY);
-    } catch {
-      // Ignore storage errors.
-    }
     setToken("");
     setTokenReady(false);
     setItems([]);
