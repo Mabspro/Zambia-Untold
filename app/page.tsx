@@ -283,9 +283,13 @@ function HomePageContent() {
     }
 
     if (route === "deep-time") {
-      setHeroExpanded(true);
+      setHeroExpanded(safe.isDesktop);
       setSatelliteScope("zambia");
       setObservatoryIntent(false);
+      if (!safe.isDesktop) {
+        setMobileLayersVisible(false);
+        setMobileMissionVisible(false);
+      }
       setLayerVisibility((prev) => ({
         ...prev,
         space: false,
@@ -296,7 +300,7 @@ function HomePageContent() {
       setScrubYear(DEEP_TIME_MIN);
       setContextualCardDismissed(false);
       setShowNkolosoCinematic(false);
-      setActivePanel("deepTime");
+      setActivePanel(safe.isDesktop ? "deepTime" : null);
       return;
     }
 
@@ -304,6 +308,10 @@ function HomePageContent() {
       setHeroExpanded(false);
       setSatelliteScope("zambia");
       setObservatoryIntent(true);
+      if (!safe.isDesktop) {
+        setMobileLayersVisible(false);
+        setMobileMissionVisible(false);
+      }
       setLayerVisibility((prev) => ({
         ...prev,
         space: true,
@@ -317,7 +325,7 @@ function HomePageContent() {
       focusLiveZambia();
       return;
     }
-  }, [focusLiveZambia, restoreMobileChrome, router, updateReturningHints]);
+  }, [focusLiveZambia, restoreMobileChrome, router, safe.isDesktop, updateReturningHints]);
 
   const selectedMarker = useMemo(
     () => MARKERS.find((m) => m.id === selectedMarkerId) ?? null,
@@ -796,7 +804,7 @@ function HomePageContent() {
           ref={headerCardRef}
           className={
             mobileLandingScrollActive
-              ? "max-h-full overflow-y-auto overscroll-contain pr-1 scrollbar-thin"
+              ? "max-h-full pr-1"
               : undefined
           }
         >
@@ -810,7 +818,7 @@ function HomePageContent() {
             archiveUnlocked={archiveUnlocked}
             showReplay={isDone}
             showWhyThisSignal={showWhyThisSignal}
-            condensed={observatoryActive && !heroExpanded}
+            condensed={!heroExpanded}
             onEntryRouteSelect={handleEntryRouteSelect}
             onReplayIntro={playIntro}
             onToggleWhyThisSignal={() => setShowWhyThisSignal((prev) => !prev)}

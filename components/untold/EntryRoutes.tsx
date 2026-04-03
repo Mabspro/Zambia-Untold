@@ -25,6 +25,27 @@ export function EntryRoutes({
   onSelect,
   supplementalLinks = [],
 }: EntryRoutesProps) {
+  const routeStyles: Record<EntryRoute, { active: string; idle: string; label: string; badge: string }> = {
+    "deep-time": {
+      active: "border-copper/45 bg-copper/12 shadow-[0_0_20px_rgba(184,115,51,0.08)]",
+      idle: "border-copper/20 bg-bg/35 hover:border-copper/35 hover:bg-copper/8",
+      label: "text-copperSoft",
+      badge: "border-copper/25 text-copper/80",
+    },
+    "live-zambia": {
+      active: "border-[#76d7ff]/45 bg-[#76d7ff]/[0.12] shadow-[0_0_22px_rgba(118,215,255,0.12)]",
+      idle: "border-[#76d7ff]/20 bg-[#081118]/55 hover:border-[#76d7ff]/40 hover:bg-[#76d7ff]/[0.08]",
+      label: "text-[#c4f2ff]",
+      badge: "border-[#76d7ff]/25 text-[#9fe7ff]",
+    },
+    archive: {
+      active: "border-[#6fd39c]/40 bg-[#6fd39c]/[0.11] shadow-[0_0_20px_rgba(111,211,156,0.1)]",
+      idle: "border-[#6fd39c]/18 bg-[#07110b]/50 hover:border-[#6fd39c]/34 hover:bg-[#6fd39c]/[0.07]",
+      label: "text-[#d6f7e4]",
+      badge: "border-[#6fd39c]/22 text-[#aee8c7]",
+    },
+  };
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-2">
@@ -41,6 +62,7 @@ export function EntryRoutes({
         {items.map((item) => {
           const active = activeRoute === item.id;
           const returning = lastEntryRoute === item.id;
+          const style = routeStyles[item.id];
           return (
             <button
               key={item.id}
@@ -48,16 +70,16 @@ export function EntryRoutes({
               onClick={() => onSelect(item.id)}
               className={`min-h-14 rounded border px-3.5 py-3 text-left transition-colors ${
                 active
-                  ? "border-copper/45 bg-copper/12"
-                  : "border-copper/20 bg-bg/35 hover:border-copper/35 hover:bg-copper/8"
+                  ? style.active
+                  : style.idle
               }`}
             >
               <div className="flex items-start justify-between gap-2">
-                <p className="text-[12px] uppercase tracking-[0.14em] text-copperSoft md:text-[13px]">
+                <p className={`text-[12px] uppercase tracking-[0.14em] md:text-[13px] ${style.label}`}>
                   {item.label}
                 </p>
                 {returning && (
-                  <span className="rounded border border-copper/25 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-copper/80">
+                  <span className={`rounded border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em] ${style.badge}`}>
                     Continue
                   </span>
                 )}
