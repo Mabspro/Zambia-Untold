@@ -39,6 +39,12 @@ const withPWA = nextPWA({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "commons.wikimedia.org" },
+      { protocol: "https", hostname: "upload.wikimedia.org" },
+    ],
+  },
   async redirects() {
     return [
       { source: "/favicon.ico", destination: "/icon.svg", permanent: false },

@@ -263,3 +263,30 @@ Use this file as a lightweight continuity layer to reduce regressions across par
 - Follow-ups:
   - Add direct links from archive cards back into relevant globe moments once route affordances are defined
   - Implement Sprint 0.5 `UntoldPresentState` and `/api/zambia-macro/state`
+
+## 2026-04-03 - Discover Zambia Route
+
+- Date: 2026-04-03
+- Area: Curated place discovery, local editorial data, Wikimedia-backed imagery
+- Intent: Build `/discover` as a route-first place surface using local curated content, province/category filters, and fly-to-globe links without touching the globe runtime or adding new APIs.
+- Invariants touched:
+  - No new backend or Supabase dependency
+  - Globe remains the homepage hero; `/discover` is a separate route
+  - `Fly to globe` is link-only (`/?fly=lat,lng`) and does not alter homepage logic yet
+- Files changed:
+  - `app/discover/page.tsx`
+  - `components/discover/DiscoverHero.tsx`
+  - `components/discover/DiscoverFilters.tsx`
+  - `components/discover/DiscoverPlaceCard.tsx`
+  - `components/discover/DiscoverPlaceGrid.tsx`
+  - `components/discover/DiscoverSurface.tsx`
+  - `data/discoverPlaces.ts`
+  - `next.config.mjs`
+- Risk:
+  - Some heritage entries currently use dignified fallbacks while direct Commons files are still being confirmed
+  - Homepage does not yet interpret the `fly` query param; links are pre-wired for that later pass
+- Regression checks run:
+  - pending
+- Follow-ups:
+  - Add homepage handling for `/?fly=lat,lng`
+  - Replace fallback imagery for Mwela and Nachikufu if direct Commons files are sourced
