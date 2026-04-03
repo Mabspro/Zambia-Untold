@@ -102,7 +102,7 @@ function HeroImage({ src }: { src: string }) {
 
 function SourceBadge({ label }: { label: string }) {
   return (
-    <span className="rounded border border-copper/30 bg-bg/60 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-[#d7c6b0]">
+    <span className="rounded border border-copper/30 bg-bg/60 px-2 py-0.5 text-[11px] uppercase tracking-[0.12em] text-[#d7c6b0]">
       {label}
     </span>
   );
@@ -139,10 +139,10 @@ function EvidenceList({ sources }: { sources: NarrativeSource[] }) {
 function NkolosoMythology() {
   return (
     <div className="space-y-3">
-      <p className="mb-1 text-[11px] uppercase tracking-[0.18em] text-copperSoft">
+      <p className="mb-1 text-[12px] uppercase tracking-[0.18em] text-copperSoft">
         Inganji · Nkoloso Sequence
       </p>
-      <p className="text-[14px] leading-relaxed text-[#B8A58F]">
+      <p className="text-[15px] leading-relaxed text-[#B8A58F]">
         The world read this as a joke. Zambia reads it as a thesis: scientific ambition without infrastructure gets dismissed.
       </p>
       <div className="space-y-2">
@@ -154,18 +154,18 @@ function NkolosoMythology() {
             transition={{ delay: 0.08 * index, duration: 0.3 }}
             className="rounded border border-copper/20 bg-copper/5 px-3 py-2"
           >
-            <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-copper/80">
+            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-copper/80">
               {beat.year} · {beat.label}
             </p>
-            <p className="mt-1 text-[14px] text-[#D8C9B4]">{beat.text}</p>
+            <p className="mt-1 text-[15px] text-[#D8C9B4]">{beat.text}</p>
           </motion.article>
         ))}
       </div>
       <div className="rounded border border-copper/35 bg-bg/65 px-3 py-2.5">
-        <p className="text-[11px] uppercase tracking-[0.14em] text-copperSoft">
+        <p className="text-[12px] uppercase tracking-[0.14em] text-copperSoft">
           Nkoloso&apos;s academy had no infrastructure.
         </p>
-        <p className="mt-1 text-[14px] text-muted/80">
+        <p className="mt-1 text-[15px] text-muted/80">
           Zambia Untold runs on Zambia&apos;s own.
         </p>
       </div>
@@ -214,14 +214,14 @@ export function NarrativePanel({
             )}
             <div className="mb-5 flex items-start justify-between gap-4">
               <div className="border-b border-copper/15 pb-3 min-w-0">
-                <p className="text-[11px] uppercase tracking-[0.22em] text-copperSoft">
+                <p className="text-[12px] uppercase tracking-[0.22em] text-copperSoft">
                   {marker
                     ? marker.tag
                     : contextualCard?.isFinale
                     ? "TERMINAL RECORD"
                     : "CONTEXT"}
                 </p>
-                <p className="font-mono mt-1 text-xs uppercase tracking-[0.18em] text-muted">
+                <p className="mt-1 font-mono text-[12px] uppercase tracking-[0.18em] text-muted">
                   {marker ? marker.epochLabel : contextualCard?.zone ?? ""}
                 </p>
               </div>
@@ -232,7 +232,7 @@ export function NarrativePanel({
                 <button
                   type="button"
                   onClick={marker ? onClose : onDismissContextualCard ?? onClose}
-                  className="min-h-11 rounded border border-copper/40 px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-text hover:border-copper transition-colors duration-300"
+                  className="min-h-11 rounded border border-copper/40 px-3 py-1.5 text-[12px] uppercase tracking-[0.16em] text-text transition-colors duration-300 hover:border-copper"
                   aria-label="Close panel"
                 >
                   Close
@@ -255,7 +255,7 @@ export function NarrativePanel({
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.15, duration: 0.5 }}
-                  className="mt-3 border-l border-copper/35 pl-3 text-sm leading-relaxed text-[#B8A58F]"
+                  className="mt-3 border-l border-copper/35 pl-3 text-base leading-relaxed text-[#B8A58F]"
                 >
                   {marker.subhead}
                 </motion.p>
@@ -264,7 +264,7 @@ export function NarrativePanel({
                   <button
                     type="button"
                     onClick={() => setActiveTab("story")}
-                    className={`narrative-tab px-3 py-1.5 text-[11px] uppercase tracking-[0.2em] transition-colors ${
+                    className={`narrative-tab px-3 py-2 text-[12px] uppercase tracking-[0.2em] transition-colors ${
                       activeTab === "story"
                         ? "border-b border-copper text-copperSoft"
                         : "text-muted hover:text-text"
@@ -275,7 +275,7 @@ export function NarrativePanel({
                   <button
                     type="button"
                     onClick={() => setActiveTab("mythology")}
-                    className={`narrative-tab px-3 py-1.5 text-[11px] uppercase tracking-[0.2em] transition-colors ${
+                    className={`narrative-tab px-3 py-2 text-[12px] uppercase tracking-[0.2em] transition-colors ${
                       activeTab === "mythology"
                         ? "border-b border-copper text-copperSoft"
                         : "text-muted hover:text-text"
@@ -286,7 +286,7 @@ export function NarrativePanel({
                   <button
                     type="button"
                     onClick={() => setActiveTab("evidence")}
-                    className={`narrative-tab px-3 py-1.5 text-[11px] uppercase tracking-[0.2em] transition-colors ${
+                    className={`narrative-tab px-3 py-2 text-[12px] uppercase tracking-[0.2em] transition-colors ${
                       activeTab === "evidence"
                         ? "border-b border-copper text-copperSoft"
                         : "text-muted hover:text-text"
@@ -338,10 +338,10 @@ export function NarrativePanel({
                           transition={{ delay: 0.4, duration: 0.5 }}
                           className="mt-4"
                         >
-                          <p className="font-mono mb-1 text-[9px] uppercase tracking-[0.2em] text-muted">
+                          <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-muted">
                             Exhibition Statement
                           </p>
-                          <div className="border border-copper/35 bg-bg/70 p-3 text-sm text-[#E4D7C5]">
+                          <div className="border border-copper/35 bg-bg/70 p-3 text-[15px] leading-relaxed text-[#E4D7C5]">
                             {narrative.cta}
                           </div>
                         </motion.div>
@@ -359,14 +359,14 @@ export function NarrativePanel({
                           <NkolosoMythology />
                         ) : (
                           <>
-                            <p className="mb-3 text-[11px] uppercase tracking-[0.18em] text-copperSoft">
+                            <p className="mb-3 text-[12px] uppercase tracking-[0.18em] text-copperSoft">
                               Inganji · Folk Tales & Mythology
                             </p>
                             <div className="rounded border border-copper/20 bg-copper/5 px-3 py-4 text-center">
-                              <p className="text-[13px] text-[#B8A58F] leading-relaxed">
+                              <p className="text-[14px] leading-relaxed text-[#B8A58F]">
                                 Folk tale connections for this site are being prepared.
                               </p>
-                              <p className="mt-2 text-[11px] text-muted">
+                              <p className="mt-2 text-[12px] text-muted">
                                 Visit{" "}
                                 <span className="text-copperSoft">🔥 Inganji</span>{" "}
                                 in the action bar to explore oral traditions.
@@ -384,7 +384,7 @@ export function NarrativePanel({
                         exit={{ opacity: 0 }}
                         className="text-sm"
                       >
-                        <p className="mb-3 text-[11px] uppercase tracking-[0.18em] text-copperSoft">
+                        <p className="mb-3 text-[12px] uppercase tracking-[0.18em] text-copperSoft">
                           Citations & sources
                         </p>
                         {narrative.sources && narrative.sources.length > 0 ? (
@@ -414,7 +414,7 @@ export function NarrativePanel({
                 >
                   {contextualCard.title}
                 </h2>
-                <p className="font-mono mt-3 text-[11px] text-muted uppercase tracking-[0.18em]">
+                <p className="mt-3 font-mono text-[12px] uppercase tracking-[0.18em] text-muted">
                   {contextualCard.zone}
                 </p>
                 <ChevronDivider />
@@ -435,8 +435,8 @@ export function NarrativePanel({
                           <p
                             className={`leading-7 ${
                               isLast
-                                ? "text-[14px] text-copperSoft font-display italic"
-                                : "text-[13px] text-[#D0C1AD]"
+                                ? "font-display text-[15px] italic text-copperSoft"
+                                : "text-[14px] text-[#D0C1AD]"
                             }`}
                           >
                             {line}
@@ -445,10 +445,10 @@ export function NarrativePanel({
                       );
                     })}
                     <div className="mt-5 flex items-center justify-between border border-copper/50 bg-copper/5 px-3 py-2.5">
-                      <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-copper">
+                      <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-copper">
                         CopperCloud · Infrastructure Layer
                       </p>
-                      <p className="font-mono text-[10px] text-copper/70">
+                      <p className="font-mono text-[11px] text-copper/70">
                         2026 AD ▸
                       </p>
                     </div>

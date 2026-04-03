@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { hasSupabaseServerWrite, selectSupabaseRows } from "@/lib/server/supabase";
+import { getProvinceForCoordinate } from "@/lib/server/provinceLookup";
 
 type ApprovedContributionRow = {
   id: number;
   title: string;
+  content: string;
+  submission_type: string | null;
   place_name: string | null;
   latitude: number | null;
   longitude: number | null;
@@ -13,8 +16,10 @@ type ApprovedContributionRow = {
 
 const TABLE = process.env.SUPABASE_ISIBALO_TABLE ?? "isibalo_submissions";
 
-export async function GET() {
+export async function GET(request: Request) {
   const generatedAt = new Date().toISOString();
+  const { searchParams } = new URL(request.url);
+  const archiveSurface = searchParams.get("surface") === "archive";
 
   if (!hasSupabaseServerWrite()) {
     return NextResponse.json(
@@ -27,23 +32,28 @@ export async function GET() {
     const rows = await selectSupabaseRows<ApprovedContributionRow>(
       TABLE,
       [
-        "select=id,title,place_name,latitude,longitude,epoch_zone,submitted_at",
+        "select=id,title,content,submission_type,place_name,latitude,longitude,epoch_zone,submitted_at",
         "moderation_status=eq.approved",
-        "latitude=not.is.null",
-        "longitude=not.is.null",
+        ...(archiveSurface ? [] : ["latitude=not.is.null", "longitude=not.is.null"]),
         "order=submitted_at.desc",
-        "limit=120",
+        `limit=${archiveSurface ? 240 : 120}`,
       ].join("&")
     );
 
     const items = rows
-      .filter((row) => Number.isFinite(row.latitude) && Number.isFinite(row.longitude))
+      .filter((row) => archiveSurface || (Number.isFinite(row.latitude) && Number.isFinite(row.longitude)))
       .map((row) => ({
         id: row.id,
         title: row.title,
+        content: row.content,
+        submissionType: row.submission_type ?? "memory",
         placeName: row.place_name ?? "",
-        latitude: Number(row.latitude),
-        longitude: Number(row.longitude),
+        latitude: Number.isFinite(row.latitude) ? Number(row.latitude) : null,
+        longitude: Number.isFinite(row.longitude) ? Number(row.longitude) : null,
+        province: getProvinceForCoordinate(
+          Number.isFinite(row.latitude) ? Number(row.latitude) : null,
+          Number.isFinite(row.longitude) ? Number(row.longitude) : null
+        ),
         epochZone: row.epoch_zone ?? "UNFINISHED SOVEREIGN",
         submittedAt: row.submitted_at,
       }));

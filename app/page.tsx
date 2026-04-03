@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { CanvasWrapper } from "@/components/Layout/CanvasWrapper";
@@ -23,10 +24,12 @@ import { GuidedTourHints } from "@/components/UI/GuidedTourHints";
 import { TerminalText } from "@/components/UI/TerminalText";
 import { MissionPanel } from "@/components/UI/MissionPanel";
 import { MissionBadgeOverlay } from "@/components/UI/MissionBadgeOverlay";
+import { ContextRail } from "@/components/untold/ContextRail";
+import { HeroIntroCard } from "@/components/untold/HeroIntroCard";
 import { MARKERS } from "@/data/markers";
 import { MISSIONS } from "@/lib/missions";
 import { emitMissionEvent, onMissionEvent } from "@/lib/missionEvents";
-import { DEEP_TIME_MAX, formatZoneForDisplay, getZoneForYear, type DeepTimeZone } from "@/lib/deepTime";
+import { DEEP_TIME_MAX, DEEP_TIME_MIN, formatZoneForDisplay, getZoneForYear, type DeepTimeZone } from "@/lib/deepTime";
 import { getContextualCardForYear } from "@/data/contextualEpochCards";
 import {
   loadMuseumPassport,
@@ -36,6 +39,17 @@ import {
   type MissionProgress,
 } from "@/lib/museumPassport";
 import { applyMissionEvent, getInitialMissionProgress } from "@/lib/missionProgress";
+import { type EntryRoute } from "@/lib/untold/entry-routes";
+import {
+  loadReturningUserHints,
+  mergeReturningUserHints,
+  type ReturningUserHints,
+} from "@/lib/untold/onboarding-state";
+import {
+  getPreferredRouteForMode,
+  resolveUntoldMode,
+  type UntoldMode,
+} from "@/lib/untold/ui-mode";
 import { useViewportSafeLayout } from "@/lib/ui/safeLayout";
 
 const Globe = dynamic(() => import("@/components/Globe/Globe").then((m) => m.Globe), {
@@ -57,7 +71,7 @@ const DEFAULT_LAYERS: LayerVisibility = {
   space: false,
   earthObservation: false,
   liveSatellites: false,
-  community: true,
+  community: false,
 };
 
 const LOBBY_STORAGE_KEY = "zambia-untold:lobby-seen";
@@ -67,6 +81,7 @@ const LOW_FI_STORAGE_KEY = "zambia-untold:low-fi-mode";
 const LOW_FI_PROMPT_SEEN_KEY = "zambia-untold:low-fi-prompt-seen";
 const LAYERS_STORAGE_KEY = "zambia-untold:layer-visibility";
 const TOTAL_GALLERIES = 8;
+const ZAMBIA_LIVE_FOCUS = { lat: -13.133897, lng: 27.849332 };
 
 type LobbyPhase = "preload" | "globe" | "thesis" | "ui" | "pulse" | "done";
 type ActivePanel =
@@ -79,6 +94,7 @@ type ActivePanel =
   | "spaceMission";
 
 export default function HomePage() {
+  const router = useRouter();
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
   const [scrubYear, setScrubYear] = useState<number>(DEEP_TIME_MAX);
   const [layerVisibility, setLayerVisibility] = useState<LayerVisibility>(DEFAULT_LAYERS);
@@ -105,6 +121,11 @@ export default function HomePage() {
   const [missionProgress, setMissionProgress] = useState<MissionProgress>(() => getInitialMissionProgress());
   const [badgeOverlayMissionId, setBadgeOverlayMissionId] = useState<string | null>(null);
   const [observatoryIntent, setObservatoryIntent] = useState(false);
+  const [returningHints, setReturningHints] = useState<ReturningUserHints | null>(null);
+  const [showWhyThisSignal, setShowWhyThisSignal] = useState(false);
+  const [heroExpanded, setHeroExpanded] = useState(true);
+  const [layersCollapseSignal, setLayersCollapseSignal] = useState(0);
+  const [satelliteScope, setSatelliteScope] = useState<"zambia" | "region">("zambia");
   const didBootRef = useRef(false);
   const headerCardRef = useRef<HTMLDivElement | null>(null);
   const [headerHeight, setHeaderHeight] = useState(210);
@@ -114,6 +135,19 @@ export default function HomePage() {
   const prevLayerRef = useRef<LayerVisibility>(DEFAULT_LAYERS);
   const prevPanelRef = useRef<ActivePanel>(null);
   const safe = useViewportSafeLayout();
+  const archiveUnlocked = visitedZones.length > 0 || activePanel === "contribute" || layerVisibility.community !== false;
+  const prevObservatoryActiveRef = useRef(false);
+
+  const updateReturningHints = useCallback((next: Partial<ReturningUserHints>) => {
+    const merged = mergeReturningUserHints(next);
+    setReturningHints(merged);
+    return merged;
+  }, []);
+
+  const focusLiveZambia = useCallback(() => {
+    setFlyToCoordinate(ZAMBIA_LIVE_FOCUS);
+    setTimeout(() => setFlyToCoordinate(null), 100);
+  }, []);
 
   /**
    * openPanel — enforces one-panel-at-a-time rule at the state level.
@@ -159,6 +193,7 @@ export default function HomePage() {
 
   const playIntro = useCallback(() => {
     clearLobbyTimers();
+    updateReturningHints({ dismissedIntro: false });
     if (typeof window !== "undefined") {
       window.sessionStorage.removeItem(LOBBY_STORAGE_KEY);
       window.sessionStorage.removeItem(TOUR_STORAGE_KEY);
@@ -175,7 +210,72 @@ export default function HomePage() {
     setShowNkolosoCinematic(false);
     setReentryZone(null);
     setLayersExpanded(false);
-  }, [clearLobbyTimers]);
+    setShowWhyThisSignal(false);
+    setHeroExpanded(true);
+    setSatelliteScope("zambia");
+  }, [clearLobbyTimers, updateReturningHints]);
+
+  const handleYearChange = useCallback((year: number) => {
+    setHasUserMovedScrubber(true);
+    setScrubYear(year);
+    setSelectedMarkerId(null);
+    setContextualCardDismissed(false);
+    setShowNkolosoCinematic(false);
+  }, []);
+
+  const handleEntryRouteSelect = useCallback((route: EntryRoute) => {
+    updateReturningHints({ lastEntryRoute: route });
+    setShowWhyThisSignal(route === "live-zambia");
+    setReentryZone(null);
+    setShowGuidedTour(false);
+    setGuidedTourCompleted(true);
+    setLayersExpanded(false);
+    setLayersCollapseSignal((prev) => prev + 1);
+    if (typeof window !== "undefined") {
+      window.sessionStorage.setItem(TOUR_STORAGE_KEY, "1");
+    }
+
+    if (route === "archive") {
+      router.push("/archive");
+      return;
+    }
+
+    if (route === "deep-time") {
+      setHeroExpanded(true);
+      setSatelliteScope("zambia");
+      setObservatoryIntent(false);
+      setLayerVisibility((prev) => ({
+        ...prev,
+        space: false,
+        earthObservation: false,
+        liveSatellites: false,
+      }));
+      setSelectedMarkerId(null);
+      setScrubYear(DEEP_TIME_MIN);
+      setContextualCardDismissed(false);
+      setShowNkolosoCinematic(false);
+      setActivePanel("deepTime");
+      return;
+    }
+
+    if (route === "live-zambia") {
+      setHeroExpanded(false);
+      setSatelliteScope("zambia");
+      setObservatoryIntent(true);
+      setLayerVisibility((prev) => ({
+        ...prev,
+        space: true,
+        liveSatellites: true,
+      }));
+      setSelectedMarkerId(null);
+      setScrubYear(DEEP_TIME_MAX);
+      setContextualCardDismissed(true);
+      setShowNkolosoCinematic(false);
+      setActivePanel(null);
+      focusLiveZambia();
+      return;
+    }
+  }, [focusLiveZambia, router, updateReturningHints]);
 
   const selectedMarker = useMemo(
     () => MARKERS.find((m) => m.id === selectedMarkerId) ?? null,
@@ -194,7 +294,9 @@ export default function HomePage() {
     const hasSeenGuidedTour = !!window.sessionStorage.getItem(TOUR_STORAGE_KEY);
     const passport = loadMuseumPassport();
     const savedMissionProgress = loadMissionProgress();
+    const savedReturningHints = loadReturningUserHints();
     if (savedMissionProgress) setMissionProgress(savedMissionProgress);
+    if (savedReturningHints) setReturningHints(savedReturningHints);
     setGuidedTourCompleted(hasSeenGuidedTour);
     setLowFiMode(window.localStorage.getItem(LOW_FI_STORAGE_KEY) === "1");
     const savedLayersRaw = window.localStorage.getItem(LAYERS_STORAGE_KEY);
@@ -254,6 +356,11 @@ export default function HomePage() {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(LAYERS_STORAGE_KEY, JSON.stringify(layerVisibility));
   }, [layerVisibility]);
+  useEffect(() => {
+    if (lobbyPhase === "done") {
+      updateReturningHints({ dismissedIntro: true });
+    }
+  }, [lobbyPhase, updateReturningHints]);
   useEffect(() => {
     if (lobbyPhase !== "preload") return;
     const t = setTimeout(() => setLobbyPhase("globe"), 3800);
@@ -460,6 +567,21 @@ export default function HomePage() {
   const isDone = lobbyPhase === "done";
   const showUI = lobbyPhase === "ui" || isDone;
   const observatoryActive = showUI && observatoryIntent && layerVisibility.space !== false;
+  const currentMode = useMemo<UntoldMode>(() => resolveUntoldMode({
+    activePanel,
+    selectedMarkerId,
+    scrubYear,
+    observatoryIntent: observatoryActive,
+  }), [activePanel, observatoryActive, scrubYear, selectedMarkerId]);
+  const activeEntryRoute = useMemo(
+    () => getPreferredRouteForMode(currentMode),
+    [currentMode]
+  );
+  const contextRoute = useMemo<EntryRoute>(() => {
+    if (currentMode === "living") return "archive";
+    if (currentMode === "archive") return "deep-time";
+    return "live-zambia";
+  }, [currentMode]);
   const headerTop = safe.headerTop;
   const headerSideInset = safe.sideInset;
   const headerBottom = headerTop + headerHeight;
@@ -475,6 +597,22 @@ export default function HomePage() {
   const mobileBottomInsetPx = safe.isDesktop ? safe.actionBottom : safe.actionBottom + 52;
   const contextualCard = getContextualCardForYear(scrubYear);
   const narrativePanelOpen = !!(selectedMarkerId || (contextualCard && !contextualCardDismissed));
+
+  useEffect(() => {
+    if (!observatoryActive) return;
+    updateReturningHints({ lastViewedLiveStateAt: new Date().toISOString() });
+  }, [observatoryActive, updateReturningHints]);
+
+  useEffect(() => {
+    const wasActive = prevObservatoryActiveRef.current;
+    if (!wasActive && observatoryActive) {
+      setHeroExpanded(false);
+    }
+    if (wasActive && !observatoryActive) {
+      setHeroExpanded(true);
+    }
+    prevObservatoryActiveRef.current = observatoryActive;
+  }, [observatoryActive]);
 
   return (
     <main className="relative isolate h-full min-h-screen w-full max-w-full overflow-x-hidden overflow-y-hidden" style={{ backgroundColor: "#030405" }}>
@@ -501,6 +639,7 @@ export default function HomePage() {
           }}
           layerVisibility={layerVisibility}
           showHUD={showUI}
+          liveSatelliteScope={satelliteScope}
           flyToCoordinate={flyToCoordinate}
           flyToPin={flyToPin}
           onFlyToPinExpire={() => setFlyToPin(null)}
@@ -551,43 +690,32 @@ export default function HomePage() {
             : { left: safe.sideInset, right: safe.sideInset }),
         }}
       >
-        <div ref={headerCardRef} className="museum-card pointer-events-auto w-full max-w-[min(92vw,420px)] overflow-hidden rounded border border-copper/25 bg-bg/70 backdrop-blur-sm md:w-auto md:max-w-none">
-          <div className={`text-center md:text-left ${safe.compact ? "px-3 py-2" : "px-4 py-2.5 md:px-4 md:py-3"}`}>
-            <p className={`font-display tracking-[0.2em] text-copper ${safe.compact ? "text-lg" : "text-xl md:text-2xl lg:text-3xl"}`}>
-              ZAMBIA UNTOLD
-            </p>
-            <p className={`uppercase tracking-[0.2em] text-muted ${safe.compact ? "mt-0.5 text-[11px]" : "mt-1 text-[11px] md:mt-1.5 md:text-xs lg:text-sm"}`}>
-              The history you were never taught
-            </p>
-            <p className={`uppercase tracking-[0.18em] text-copperSoft/90 ${safe.compact ? "mt-1 text-[11px]" : "mt-1.5 text-[11px] md:mt-2 md:text-[11px]"}`}>
-              Galleries Visited: {visitedZones.length}/{TOTAL_GALLERIES}
-            </p>
-            <p className={`font-mono uppercase tracking-[0.16em] text-muted/70 ${safe.compact ? "mt-0.5 text-[11px]" : "mt-1 text-[11px]"}`}>
-              Stored locally · No external tracking
-            </p>
-            {isDone && (
-              <button
-                type="button"
-                onClick={playIntro}
-                className="pointer-events-auto mt-2 block w-full rounded border border-copper/20 bg-transparent py-1 text-[11px] uppercase tracking-[0.14em] text-copper/70 hover:border-copper/40 hover:text-copper/90 md:mt-2.5"
-              >
-                Play intro
-              </button>
+        <div ref={headerCardRef}>
+          <HeroIntroCard
+            mode={currentMode}
+            activeRoute={activeEntryRoute}
+            lastEntryRoute={returningHints?.lastEntryRoute}
+            visitedGalleries={visitedZones.length}
+            totalGalleries={TOTAL_GALLERIES}
+            lastViewedLiveStateAt={returningHints?.lastViewedLiveStateAt}
+            archiveUnlocked={archiveUnlocked}
+            showReplay={isDone}
+            showWhyThisSignal={showWhyThisSignal}
+            condensed={observatoryActive && !heroExpanded}
+            onEntryRouteSelect={handleEntryRouteSelect}
+            onReplayIntro={playIntro}
+            onToggleWhyThisSignal={() => setShowWhyThisSignal((prev) => !prev)}
+            onShowRoutes={() => setHeroExpanded(true)}
+            onHideRoutes={() => setHeroExpanded(false)}
+            onEnterArchive={() => handleEntryRouteSelect("archive")}
+            timeControls={(
+              <TimeButtons
+                embedded
+                year={scrubYear}
+                onYearChange={handleYearChange}
+              />
             )}
-          </div>
-          <div className="border-t border-copper/20 px-3 py-2 md:px-3 md:py-2">
-            <TimeButtons
-              embedded
-              year={scrubYear}
-              onYearChange={(year) => {
-                setHasUserMovedScrubber(true);
-                setScrubYear(year);
-                setSelectedMarkerId(null);
-                setContextualCardDismissed(false);
-                setShowNkolosoCinematic(false);
-              }}
-            />
-          </div>
+          />
         </div>
       </header>
 
@@ -598,6 +726,7 @@ export default function HomePage() {
           onClick={() => {
             clearLobbyTimers();
             setLobbyPhase("done");
+            updateReturningHints({ dismissedIntro: true });
             if (typeof window !== "undefined") {
               window.sessionStorage.setItem(LOBBY_STORAGE_KEY, "1");
             }
@@ -616,7 +745,10 @@ export default function HomePage() {
 
       {/* Re-entry prompt — anchored into the left archive column, below the header card. */}
       {reentryZone && isDone && (
-        <aside className="pointer-events-auto absolute left-3 right-3 top-[15.25rem] z-30 rounded border border-copper/35 bg-bg/90 px-4 py-3 text-left backdrop-blur md:left-6 md:right-auto md:top-[16.25rem] md:w-[420px]">
+        <aside
+          className="pointer-events-auto absolute left-3 right-3 z-30 rounded border border-copper/35 bg-bg/90 px-4 py-3 text-left backdrop-blur md:left-6 md:right-auto md:w-[420px]"
+          style={{ top: headerBottom + 12 }}
+        >
           <p className="font-display text-[12px] tracking-[0.18em] text-copperSoft">
             You left during {formatZoneForDisplay(reentryZone)}
           </p>
@@ -684,10 +816,10 @@ export default function HomePage() {
           style={{
             bottom: `calc(env(safe-area-inset-bottom, 0px) + ${mobileBottomInsetPx}px)`,
             ...(safe.isDesktop
-              ? { left: "50%", transform: "translateX(-50%)", maxWidth: "min(92vw, 520px)" }
+              ? { left: "50%", transform: "translateX(-50%)", maxWidth: "min(96vw, 760px)" }
               : { left: safe.sideInset, right: safe.sideInset }),
           }}
-          className="action-nav absolute z-30 flex items-center justify-center gap-1.5 overflow-x-auto whitespace-nowrap rounded-lg border border-copper/30 bg-bg/85 px-4 py-2.5 backdrop-blur-md shadow-glow md:justify-start"
+          className="action-nav absolute z-30 flex items-center justify-center gap-2 overflow-x-auto whitespace-nowrap rounded-lg border border-copper/30 bg-bg/85 px-5 py-3 backdrop-blur-md shadow-glow md:justify-start"
         >
           {/* Breathing indicator — implies a living system */}
           <div className="mr-1 h-1.5 w-1.5 rounded-full bg-copper/60 animate-[breathing_3s_ease-in-out_infinite]" />
@@ -697,7 +829,7 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => openPanel(activePanel === "deepTime" ? null : "deepTime")}
-              className={`action-nav-btn flex items-center gap-1 rounded px-2 py-1.5 text-[11px] uppercase tracking-[0.12em] transition-all duration-200 md:gap-1.5 md:px-3 md:py-2 md:text-[11px] md:tracking-[0.14em] ${
+              className={`action-nav-btn flex min-h-11 items-center gap-1.5 rounded-md px-2.5 py-2 text-[12px] uppercase tracking-[0.12em] transition-all duration-200 md:gap-1.5 md:px-3.5 md:py-2.5 md:text-[12px] md:tracking-[0.14em] ${
                 activePanel === "deepTime"
                   ? "bg-copper/20 text-copper border border-copper/40 shadow-[0_0_8px_rgba(184,115,51,0.2)]"
                   : "text-copperSoft hover:text-copper hover:bg-copper/8 border border-transparent hover:border-copper/25 hover:shadow-[0_0_6px_rgba(184,115,51,0.15)]"
@@ -706,7 +838,7 @@ export default function HomePage() {
               <span className="text-sm">🪨</span>
               <span className="hidden sm:inline">Deep Time</span>
             </button>
-            <span className="museum-tooltip absolute -top-16 left-1/2 w-[240px] -translate-x-1/2 border border-copper/30 bg-[#0A0806] px-2 py-1 text-[11px] leading-relaxed text-copperSoft whitespace-pre-line">
+            <span className="museum-tooltip absolute -top-16 left-1/2 w-[240px] -translate-x-1/2 border border-copper/30 bg-[#0A0806] px-2.5 py-1.5 text-[12px] leading-relaxed text-copperSoft whitespace-pre-line">
               {"Navigate from 4.5 billion BC\nto the present moment."}
             </span>
           </div>
@@ -718,7 +850,7 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => openPanel(activePanel === "calendar" ? null : "calendar")}
-              className={`action-nav-btn flex items-center gap-1 rounded px-2 py-1.5 text-[11px] uppercase tracking-[0.12em] transition-all duration-200 md:gap-1.5 md:px-3 md:py-2 md:text-[11px] md:tracking-[0.14em] ${
+              className={`action-nav-btn flex min-h-11 items-center gap-1.5 rounded-md px-2.5 py-2 text-[12px] uppercase tracking-[0.12em] transition-all duration-200 md:gap-1.5 md:px-3.5 md:py-2.5 md:text-[12px] md:tracking-[0.14em] ${
                 activePanel === "calendar"
                   ? "bg-copper/20 text-copper border border-copper/40 shadow-[0_0_8px_rgba(184,115,51,0.2)]"
                   : "text-copperSoft hover:text-copper hover:bg-copper/8 border border-transparent hover:border-copper/25 hover:shadow-[0_0_6px_rgba(184,115,51,0.15)]"
@@ -727,7 +859,7 @@ export default function HomePage() {
               <span className="text-sm">📅</span>
               <span className="hidden sm:inline">Calendar</span>
             </button>
-            <span className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 rounded bg-panel/95 border border-copper/20 px-2 py-0.5 text-[11px] text-muted/70 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+            <span className="pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 rounded border border-copper/20 bg-panel/95 px-2.5 py-1 text-[12px] text-muted/70 opacity-0 transition-opacity whitespace-nowrap group-hover:opacity-100">
               Historical sequence
             </span>
           </div>
@@ -737,7 +869,7 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => openPanel(activePanel === "folkTales" ? null : "folkTales")}
-              className={`action-nav-btn flex items-center gap-1 rounded px-2 py-1.5 text-[11px] uppercase tracking-[0.12em] transition-all duration-200 md:gap-1.5 md:px-3 md:py-2 md:text-[11px] md:tracking-[0.14em] ${
+              className={`action-nav-btn flex min-h-11 items-center gap-1.5 rounded-md px-2.5 py-2 text-[12px] uppercase tracking-[0.12em] transition-all duration-200 md:gap-1.5 md:px-3.5 md:py-2.5 md:text-[12px] md:tracking-[0.14em] ${
                 activePanel === "folkTales"
                   ? "bg-copper/20 text-copper border border-copper/40 shadow-[0_0_8px_rgba(184,115,51,0.2)]"
                   : "text-copperSoft hover:text-copper hover:bg-copper/8 border border-transparent hover:border-copper/25 hover:shadow-[0_0_6px_rgba(184,115,51,0.15)]"
@@ -746,7 +878,7 @@ export default function HomePage() {
               <span className="text-sm">🔥</span>
               <span className="hidden sm:inline">Inganji</span>
             </button>
-            <span className="museum-tooltip absolute -top-16 left-1/2 w-[240px] -translate-x-1/2 border border-copper/30 bg-[#0A0806] px-2 py-1 text-[11px] leading-relaxed text-copperSoft whitespace-pre-line">
+            <span className="museum-tooltip absolute -top-16 left-1/2 w-[240px] -translate-x-1/2 border border-copper/30 bg-[#0A0806] px-2.5 py-1.5 text-[12px] leading-relaxed text-copperSoft whitespace-pre-line">
               {"Zambia's living mythology.\nStories older than writing."}
             </span>
           </div>
@@ -756,7 +888,7 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => openPanel(activePanel === "villageSearch" ? null : "villageSearch")}
-              className={`action-nav-btn flex items-center gap-1 rounded px-2 py-1.5 text-[11px] uppercase tracking-[0.12em] transition-all duration-200 md:gap-1.5 md:px-3 md:py-2 md:text-[11px] md:tracking-[0.14em] ${
+              className={`action-nav-btn flex min-h-11 items-center gap-1.5 rounded-md px-2.5 py-2 text-[12px] uppercase tracking-[0.12em] transition-all duration-200 md:gap-1.5 md:px-3.5 md:py-2.5 md:text-[12px] md:tracking-[0.14em] ${
                 activePanel === "villageSearch"
                   ? "bg-copper/20 text-copper border border-copper/40 shadow-[0_0_8px_rgba(184,115,51,0.2)]"
                   : "text-copperSoft hover:text-copper hover:bg-copper/8 border border-transparent hover:border-copper/25 hover:shadow-[0_0_6px_rgba(184,115,51,0.15)]"
@@ -765,7 +897,7 @@ export default function HomePage() {
               <span className="text-sm">📍</span>
               <span className="hidden sm:inline">Search</span>
             </button>
-            <span className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 rounded bg-panel/95 border border-copper/20 px-2 py-0.5 text-[11px] text-muted/70 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+            <span className="pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 rounded border border-copper/20 bg-panel/95 px-2.5 py-1 text-[12px] text-muted/70 opacity-0 transition-opacity whitespace-nowrap group-hover:opacity-100">
               Find your village
             </span>
           </div>
@@ -775,7 +907,7 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => openPanel(activePanel === "contribute" ? null : "contribute")}
-              className={`action-nav-btn flex items-center gap-1 rounded px-2 py-1.5 text-[11px] uppercase tracking-[0.12em] transition-all duration-200 md:gap-1.5 md:px-3 md:py-2 md:text-[11px] md:tracking-[0.14em] ${
+              className={`action-nav-btn flex min-h-11 items-center gap-1.5 rounded-md px-2.5 py-2 text-[12px] uppercase tracking-[0.12em] transition-all duration-200 md:gap-1.5 md:px-3.5 md:py-2.5 md:text-[12px] md:tracking-[0.14em] ${
                 activePanel === "contribute"
                   ? "bg-copper/20 text-copper border border-copper/40 shadow-[0_0_8px_rgba(184,115,51,0.2)]"
                   : "text-copperSoft hover:text-copper hover:bg-copper/8 border border-transparent hover:border-copper/25 hover:shadow-[0_0_6px_rgba(184,115,51,0.15)]"
@@ -784,7 +916,7 @@ export default function HomePage() {
               <span className="text-sm">✦</span>
               <span className="hidden sm:inline">Isibalo</span>
             </button>
-            <span className="museum-tooltip absolute -top-16 left-1/2 w-[260px] -translate-x-1/2 border border-copper/30 bg-[#0A0806] px-2 py-1 text-[11px] leading-relaxed text-copperSoft whitespace-pre-line">
+            <span className="museum-tooltip absolute -top-16 left-1/2 w-[260px] -translate-x-1/2 border border-copper/30 bg-[#0A0806] px-2.5 py-1.5 text-[12px] leading-relaxed text-copperSoft whitespace-pre-line">
               {"The community record.\nMemories the archive hasn't captured yet."}
             </span>
           </div>
@@ -802,6 +934,7 @@ export default function HomePage() {
         <LayersPanel
           positionStyle={layersPositionStyle}
           contentMaxHeight={layersContentMaxHeight}
+          collapseSignal={layersCollapseSignal}
           visibility={layerVisibility}
           onVisibilityChange={setLayerVisibility}
           visitedZones={visitedZones}
@@ -834,40 +967,35 @@ export default function HomePage() {
         />
       )}
       {showUI && !observatoryIntent && !hideMobileAuxOverlays && (
-        <aside className="pointer-events-auto absolute right-4 top-[6.5rem] z-20 hidden w-[min(320px,30vw)] overflow-hidden border border-copper/35 bg-[linear-gradient(135deg,rgba(184,115,51,0.12)_0%,rgba(12,18,24,0.92)_36%,rgba(21,72,52,0.22)_100%)] px-3 py-3 shadow-[0_0_24px_rgba(184,115,51,0.12)] backdrop-blur-md md:block">
-          <div className="pointer-events-none absolute inset-y-0 left-0 w-[3px] bg-gradient-to-b from-copper via-[#d6a24a] to-[#2d8a57]" />
-          <p className="font-display text-[11px] uppercase tracking-[0.18em] text-[#f0bf72]">Second Lens</p>
-          <p className="mt-1 text-[12px] leading-relaxed text-[#f3e5cf]">
-            Start in the archive. Open the observatory only when you want present-day signals.
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              setObservatoryIntent(true);
-              setLayerVisibility((prev) => ({ ...prev, space: true }));
-            }}
-            className="mt-3 rounded border border-copper/45 bg-[rgba(184,115,51,0.08)] px-3 py-1.5 text-[11px] uppercase tracking-[0.14em] text-[#f0bf72] transition-colors hover:border-[#d6a24a] hover:bg-[rgba(184,115,51,0.14)]"
-          >
-            Observe the Present
-          </button>
-        </aside>
+        <ContextRail
+          mode={currentMode}
+          preferredRoute={contextRoute}
+          onSelectRoute={handleEntryRouteSelect}
+        />
       )}
       {observatoryActive && !hideMobileAuxOverlays && (
         <SpaceSignal
           enabled={observatoryActive}
           earthObservationEnabled={layerVisibility.earthObservation !== false}
           liveSatellitesEnabled={layerVisibility.liveSatellites !== false}
+          satelliteScope={satelliteScope}
           onEnableLiveSatellites={() => {
             setObservatoryIntent(true);
             setLayerVisibility((prev) => ({ ...prev, space: true, liveSatellites: true }));
           }}
+          onToggleSatelliteScope={() =>
+            setSatelliteScope((prev) => (prev === "zambia" ? "region" : "zambia"))
+          }
+          onEnterArchive={() => handleEntryRouteSelect("archive")}
           onOpenMissionBuilder={() => openPanel("spaceMission")}
           guidedTourActive={showGuidedTour}
         />
       )}
 
-      {/* Sovereignty Stack — bottom-left, above MissionPanel, desktop only. Hidden during guided tour to avoid card stacking. */}
-      {showUI && !layersExpanded && !showGuidedTour && <SovereigntyStack year={scrubYear} />}
+      {/* Sovereignty Stack — museum/deep-time support panel, hidden in live observatory mode to keep focus on the present lens. */}
+      {showUI && !observatoryActive && !layersExpanded && !showGuidedTour && (
+        <SovereigntyStack year={scrubYear} />
+      )}
 
       {/* Story Compass — persistent "You Are Here" context indicator.
           Museum corner label aesthetic — a whisper, not a headline. */}
@@ -879,7 +1007,7 @@ export default function HomePage() {
         />
       )}
 
-      {showUI && !hideMobileAuxOverlays && (
+      {showUI && !observatoryActive && !hideMobileAuxOverlays && (
         <MissionPanel
           progress={missionProgress}
           startExpanded={false}

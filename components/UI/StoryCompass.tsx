@@ -71,7 +71,7 @@ export function StoryCompass({
       aria-live="polite"
       aria-label="Current exhibit context"
     >
-      <p className="block truncate text-center font-mono text-[9px] uppercase tracking-[0.18em] text-muted/50 md:text-right">
+      <p className="block truncate text-center font-mono text-[10px] uppercase tracking-[0.18em] text-muted/65 md:text-right md:text-[11px]">
         {label}
       </p>
     </div>

@@ -94,9 +94,9 @@ export function MissionPanel({
   return (
     <>
       <aside
-        className="pointer-events-auto fixed left-3 right-3 z-[35] w-auto md:left-auto md:right-6 md:w-[min(300px,28vw)]"
+        className="pointer-events-auto fixed left-3 right-3 z-[35] w-auto md:left-auto md:right-6 md:w-[min(340px,30vw)]"
         style={{
-          bottom: "calc(5.5rem + env(safe-area-inset-bottom, 0px))",
+          bottom: "calc(8.25rem + env(safe-area-inset-bottom, 0px))",
         }}
       >
         <AnimatePresence mode="wait" initial={false}>
@@ -108,10 +108,10 @@ export function MissionPanel({
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 6 }}
-              className="terminal-panel w-full border border-copper/30 bg-[#0A0806]/95 px-3 py-2 text-left"
+              className="terminal-panel w-full border border-copper/30 bg-[#0A0806]/95 px-3.5 py-2.5 text-left shadow-[0_0_22px_rgba(184,115,51,0.08)]"
             >
               <div className="flex items-center justify-between gap-2">
-                <p className="font-mono text-[11px] uppercase tracking-[0.15em] text-copperSoft/85">
+                <p className="font-mono text-[12px] uppercase tracking-[0.15em] text-copperSoft/90">
                   <span
                     className={
                       showPulseCue && !missionOneComplete
@@ -123,11 +123,11 @@ export function MissionPanel({
                   </span>{" "}
                   {currentMission.title}
                 </p>
-                <span className="font-mono text-[11px] text-copper/80" aria-hidden>
+                <span className="font-mono text-[12px] text-copper/80" aria-hidden>
                   ▴
                 </span>
               </div>
-              <p className="mt-1 font-mono text-[11px] tracking-[0.12em] text-[#7A6550]/80">
+              <p className="mt-1.5 text-[12px] leading-relaxed text-[#9b7d60]">
                 {currentMission.description}
               </p>
             </motion.button>
@@ -137,31 +137,31 @@ export function MissionPanel({
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 6 }}
-              className="terminal-panel max-h-[min(42vh,280px)] overflow-y-auto border border-copper/30 bg-[#0A0806]/95 px-3 py-3 md:max-h-[min(42vh,320px)] md:overflow-visible"
+              className="terminal-panel max-h-[min(42vh,300px)] overflow-y-auto border border-copper/30 bg-[#0A0806]/95 px-4 py-3.5 shadow-[0_0_22px_rgba(184,115,51,0.08)] md:max-h-[min(42vh,340px)] md:overflow-visible"
             >
               <div className="flex items-start justify-between gap-2">
-                <p className="font-mono text-[11px] uppercase tracking-[0.15em] text-[#7A6550]">ZAMBIA UNTOLD · MISSION SYSTEM</p>
+                <p className="font-mono text-[12px] uppercase tracking-[0.15em] text-[#9b7d60]">ZAMBIA UNTOLD · MISSION SYSTEM</p>
                 <button
                   type="button"
                   onClick={() => {
                     setUserCollapsed(true);
                     setCollapsed(true);
                   }}
-                  className="min-h-11 border border-copper/25 px-2 py-0.5 font-mono text-[11px] uppercase tracking-[0.12em] text-muted/80 hover:text-text"
+                  className="min-h-11 border border-copper/25 px-3 py-1 font-mono text-[12px] uppercase tracking-[0.12em] text-muted/80 hover:text-text"
                   aria-label="Collapse mission panel"
                 >
                   ▾
                 </button>
               </div>
               <div className="mt-1 border-t border-copper/25" />
-              <p className="mt-2 font-display text-[12px] uppercase tracking-[0.16em] text-copper">{currentMission.title}</p>
-              <p className="mt-1 text-[11px] text-muted/80">{currentMission.description}</p>
+              <p className="mt-2 font-display text-[13px] uppercase tracking-[0.16em] text-copper">{currentMission.title}</p>
+              <p className="mt-1.5 text-[13px] leading-relaxed text-muted/80">{currentMission.description}</p>
 
               <div className="mt-2 space-y-1.5">
                 {currentMission.steps.map((step) => {
                   const done = progress.completedSteps.includes(step.id);
                   return (
-                    <p key={step.id} className="font-mono text-[11px] leading-[1.4] text-text/90 whitespace-pre-line">
+                    <p key={step.id} className="font-mono text-[12px] leading-[1.45] text-text/90 whitespace-pre-line">
                       <span className={done ? "text-copper" : "text-[#7A6550]"}>{done ? "[✓]" : "[·]"}</span>{" "}
                       <span className={done ? "text-muted/80" : "text-copperSoft"}>{done ? step.instruction : `> ${step.instruction}`}</span>
                     </p>
@@ -170,20 +170,20 @@ export function MissionPanel({
               </div>
 
               <div className="mt-3 flex items-center justify-between">
-                <p className="font-mono text-[11px] tracking-[0.14em] text-[#7A6550]" aria-hidden>
+                <p className="font-mono text-[11px] tracking-[0.14em] text-[#9b7d60]" aria-hidden>
                   {currentMission.steps.map((step) => (progress.completedSteps.includes(step.id) ? "[█]" : "[·]")).join(" ")}
                 </p>
                 <button
                   type="button"
                   onClick={() => setShowAll(true)}
-                  className="border border-copper/30 px-2 py-1 font-mono text-[11px] uppercase tracking-[0.12em] text-copperSoft hover:border-copper"
+                  className="min-h-10 border border-copper/30 px-3 py-1.5 font-mono text-[12px] uppercase tracking-[0.12em] text-copperSoft hover:border-copper"
                   aria-haspopup="dialog"
                   aria-expanded={showAll}
                 >
                   All Missions
                 </button>
               </div>
-              <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.12em] text-muted/80">
+              <p className="mt-1.5 font-mono text-[12px] uppercase tracking-[0.12em] text-muted/80">
                 {currentDone} of {currentMission.steps.length} complete
               </p>
             </motion.div>
@@ -198,9 +198,9 @@ export function MissionPanel({
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
-            className="fixed left-3 right-3 z-[45] w-auto border border-copper/35 bg-panel/95 p-3 backdrop-blur md:left-auto md:right-8 md:w-[320px]"
+            className="fixed left-3 right-3 z-[45] w-auto border border-copper/35 bg-panel/95 p-3.5 backdrop-blur md:left-auto md:right-8 md:w-[340px]"
             style={{
-              bottom: "calc(7rem + env(safe-area-inset-bottom, 0px))",
+              bottom: "calc(9.5rem + env(safe-area-inset-bottom, 0px))",
             }}
             role="dialog"
             aria-modal="true"
@@ -208,12 +208,12 @@ export function MissionPanel({
             tabIndex={-1}
           >
             <div className="flex items-center justify-between">
-              <p id="mission-log-title" className="font-display text-[12px] uppercase tracking-[0.18em] text-copper">Mission Log</p>
+              <p id="mission-log-title" className="font-display text-[13px] uppercase tracking-[0.18em] text-copper">Mission Log</p>
               <button
                 ref={closeButtonRef}
                 type="button"
                 onClick={() => setShowAll(false)}
-                className="border border-copper/25 px-2 py-1 font-mono text-[11px] uppercase tracking-[0.12em] text-muted/80 hover:text-text"
+                className="min-h-10 border border-copper/25 px-3 py-1.5 font-mono text-[12px] uppercase tracking-[0.12em] text-muted/80 hover:text-text"
               >
                 Close
               </button>
@@ -231,13 +231,13 @@ export function MissionPanel({
                       setShowAll(false);
                       setCollapsed(false);
                     }}
-                    className="w-full border border-copper/20 bg-bg/60 px-2.5 py-2 text-left hover:border-copper/35"
+                    className="w-full border border-copper/20 bg-bg/60 px-3 py-2.5 text-left hover:border-copper/35"
                   >
-                    <p className="font-mono text-[11px] uppercase tracking-[0.13em] text-copperSoft">
+                    <p className="font-mono text-[12px] uppercase tracking-[0.13em] text-copperSoft">
                       {mission.badge} {mission.title}
                     </p>
-                    <p className="mt-1 text-[11px] text-muted/80">{mission.description}</p>
-                    <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.12em] text-copper/80">
+                    <p className="mt-1.5 text-[12px] leading-relaxed text-muted/80">{mission.description}</p>
+                    <p className="mt-1.5 font-mono text-[11px] uppercase tracking-[0.12em] text-copper/80">
                       {done ? `Badge earned: ${mission.badgeLabel}` : `${count}/${mission.steps.length} steps`}
                     </p>
                   </button>

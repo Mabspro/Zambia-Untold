@@ -10,6 +10,7 @@ import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
 export const runtime = 'edge'
+const KEEPALIVE_TABLE = process.env.SUPABASE_ISIBALO_TABLE ?? 'isibalo_submissions'
 
 export async function GET() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -22,7 +23,7 @@ export async function GET() {
   try {
     const supabase = createClient(url, key)
     const { error } = await supabase
-      .from('isibalo_submissions')
+      .from(KEEPALIVE_TABLE)
       .select('id')
       .limit(1)
 

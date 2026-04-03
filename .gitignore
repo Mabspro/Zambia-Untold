@@ -33,3 +33,6 @@ playwright/.cache/
 
 # Salesforce DX tooling (auto-generated, not needed)
 .sfdx/
+
+# Codex screenshot artifacts
+tmp-*.png

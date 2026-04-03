@@ -116,15 +116,15 @@ export function GuidedTourHints({
   const panelStyle: React.CSSProperties = {
     position: "fixed",
     top: "auto",
-    left: layout.sideInset,
-    right: layout.sideInset,
-    width: "auto",
-    maxWidth: 460,
-    transform: "none",
-    // Stack above action bar and mission panel: use a higher bottom so cards don't overlap
+    left: "50%",
+    right: "auto",
+    width: layout.isDesktop ? "min(92vw, 560px)" : `calc(100vw - ${layout.sideInset * 2}px)`,
+    maxWidth: layout.isDesktop ? 560 : undefined,
+    transform: "translateX(-50%)",
+    // Keep the guided briefing clear of both the hero rail and the bottom system controls.
     bottom: layout.isDesktop
-      ? "12rem"
-      : Math.max(layout.actionBottom + 72, layout.bottomInset + 96),
+      ? "11.75rem"
+      : Math.max(layout.actionBottom + 84, layout.bottomInset + 108),
   };
 
   return (
@@ -141,12 +141,12 @@ export function GuidedTourHints({
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.24 }}
           style={panelStyle}
-          className="terminal-panel pointer-events-auto fixed !top-auto border border-[rgba(184,115,51,0.3)] bg-[#0A0806]/95 px-3 py-2.5 md:px-4 md:py-3"
+          className="terminal-panel pointer-events-auto fixed !top-auto border border-[rgba(184,115,51,0.36)] bg-[#0A0806]/95 px-4 py-3 shadow-[0_0_24px_rgba(184,115,51,0.1)] md:px-5 md:py-4"
         >
-          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[#7A6550]">ZAMBIA UNTOLD · SYSTEM v1.0</p>
+          <p className="font-mono text-[12px] uppercase tracking-[0.16em] text-[#9b7d60]">ZAMBIA UNTOLD · SYSTEM v1.0</p>
           <div className="mt-1 border-t border-copper/30" />
 
-          <div className="mt-2 min-h-[62px] font-mono text-[11px] leading-[1.45] text-[#B87333] md:min-h-[74px] md:text-[12px]">
+          <div className="mt-3 min-h-[72px] font-mono text-[12px] leading-[1.55] text-[#d49752] md:min-h-[86px] md:text-[13px]">
             <TerminalText
               key={`tour-${step}`}
               text={STEPS[step]}
@@ -158,8 +158,8 @@ export function GuidedTourHints({
             />
           </div>
 
-          <div className="mt-2 flex items-center justify-between">
-            <div className="font-mono text-[11px] tracking-[0.14em] text-[#7A6550]" aria-hidden>
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <div className="font-mono text-[11px] tracking-[0.14em] text-[#9b7d60]" aria-hidden>
               <span>{step === 1 ? "[█]" : "[·]"}</span>{" "}
               <span>{step === 2 ? "[█]" : "[·]"}</span>{" "}
               <span>{step >= 3 ? (step === 3 ? "[█]" : "[·]") : "[·]"}</span>
@@ -167,7 +167,7 @@ export function GuidedTourHints({
             <button
               type="button"
               onClick={handleSkip}
-              className="font-mono border border-copper/35 px-2 py-1 text-[11px] uppercase tracking-[0.12em] text-[#B87333] hover:border-copper hover:text-[#d49752]"
+              className="min-h-11 font-mono border border-copper/35 px-3 py-1.5 text-[12px] uppercase tracking-[0.12em] text-[#d49752] hover:border-copper hover:text-[#e4ad67]"
             >
               Skip briefing
             </button>

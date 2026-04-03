@@ -26,19 +26,19 @@ export function PreloadScreen({ visible }: PreloadScreenProps) {
 
   return (
     <div
-      className={`pointer-events-none fixed inset-0 z-30 flex items-center justify-center bg-[#050505]/95 transition-opacity duration-700 ${
+      className={`pointer-events-none fixed inset-0 z-30 flex items-center justify-center bg-[radial-gradient(circle_at_top,rgba(184,115,51,0.08),rgba(5,5,5,0.96)_42%,rgba(3,4,5,0.98)_100%)] transition-opacity duration-700 ${
         visible ? "opacity-100" : "opacity-0"
       }`}
     >
-      <section className="terminal-panel relative w-[min(94vw,760px)] border border-copper/30 bg-[#0A0806]/92 px-4 py-4 text-left md:px-6 md:py-5">
-        <p className="font-mono text-[13px] uppercase tracking-[0.24em] text-[#B87333]">ZAMBIA UNTOLD</p>
-        <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[#7A6550] md:text-[11px]">
+      <section className="terminal-panel relative w-[min(94vw,780px)] border border-copper/35 bg-[#0A0806]/94 px-5 py-5 text-left shadow-[0_0_36px_rgba(184,115,51,0.12)] md:px-7 md:py-6">
+        <p className="font-mono text-[14px] uppercase tracking-[0.24em] text-[#d49752] md:text-[15px]">ZAMBIA UNTOLD</p>
+        <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.18em] text-[#9b7d60] md:text-[12px]">
           SOVEREIGN INTELLIGENCE ATLAS
         </p>
 
-        <p className="mt-2 font-mono text-[11px] text-[#B87333]/70">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</p>
+        <p className="mt-3 font-mono text-[12px] text-[#B87333]/80">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</p>
 
-        <div className="mt-3 space-y-1.5 md:space-y-2">
+        <div className="mt-4 space-y-2 md:space-y-2.5">
           {BOOT_LINES.map((line, i) => {
             const isDone = completed.has(i);
             const isActive = i === activeLine;
@@ -47,8 +47,8 @@ export function PreloadScreen({ visible }: PreloadScreenProps) {
             if (isHidden) return null;
 
             return (
-              <div key={line} className="flex items-center justify-between gap-3 font-mono text-[10px] md:text-[11px]">
-                <span className="text-[#B87333]">
+              <div key={line} className="flex items-center justify-between gap-3 font-mono text-[11px] md:text-[12px]">
+                <span className="text-[#d49752]">
                   &gt;{" "}
                   {isActive && !isDone ? (
                     <TerminalText
@@ -70,7 +70,7 @@ export function PreloadScreen({ visible }: PreloadScreenProps) {
                     <span>{line}</span>
                   )}
                 </span>
-                {isDone && <span className="text-[#B87333]">[OK]</span>}
+                {isDone && <span className="text-[#d49752]">[OK]</span>}
               </div>
             );
           })}
@@ -78,8 +78,8 @@ export function PreloadScreen({ visible }: PreloadScreenProps) {
 
         {showFooter && (
           <>
-            <p className="mt-3 font-mono text-[11px] text-[#B87333]/70">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</p>
-            <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.16em] text-[#7A6550] md:text-[11px]">
+            <p className="mt-4 font-mono text-[12px] text-[#B87333]/80">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</p>
+            <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.16em] text-[#9b7d60] md:text-[12px]">
               POWERED BY COPPERCLOUD · ZAMBIA
             </p>
           </>

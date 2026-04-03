@@ -36,7 +36,7 @@ export function TimeButtons({ year, onYearChange, embedded }: TimeButtonsProps) 
 
   return (
     <div
-      className={`pointer-events-auto flex w-full max-w-[92vw] items-center justify-center gap-2 rounded px-3 py-2 md:w-auto md:max-w-none md:py-2 ${
+      className={`pointer-events-auto flex w-full max-w-[92vw] items-center justify-center gap-2 rounded px-3 py-2.5 md:w-auto md:max-w-none md:py-2.5 ${
         embedded ? "border-0 bg-transparent backdrop-blur-none" : "border border-copper/25 bg-bg/70 backdrop-blur-sm"
       }`}
     >
@@ -54,11 +54,11 @@ export function TimeButtons({ year, onYearChange, embedded }: TimeButtonsProps) 
         ◂
       </button>
 
-      <div className="flex flex-col items-center min-w-0">
-        <p className="text-[11px] uppercase tracking-[0.16em] text-copper truncate md:text-[12px]">
+      <div className="flex min-w-0 flex-col items-center">
+        <p className="text-[12px] uppercase tracking-[0.16em] text-copper truncate md:text-[13px]">
           {formatZoneForDisplay(currentZone)}
         </p>
-        <p className="font-mono text-[11px] text-muted/80">
+        <p className="font-mono text-[12px] text-muted/80">
           {formatDeepTimeLabel(year)}
         </p>
       </div>

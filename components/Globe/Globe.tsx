@@ -34,6 +34,7 @@ type GlobeProps = {
   onMarkerSelect: (marker: Marker) => void;
   layerVisibility?: LayerVisibility;
   showHUD?: boolean;
+  liveSatelliteScope?: "zambia" | "region";
   flyToCoordinate?: { lat: number; lng: number } | null;
   /** Temporary confirmation pin after Village Search fly-to. Auto-expires. */
   flyToPin?: { lat: number; lng: number; placeName?: string } | null;
@@ -137,6 +138,24 @@ type LiveSatelliteSample = {
   altitudeKm: number;
 };
 
+function isSatelliteOverZambia(sample: LiveSatelliteSample) {
+  return (
+    sample.latitude >= -18.5 &&
+    sample.latitude <= -8.1 &&
+    sample.longitude >= 21.9 &&
+    sample.longitude <= 33.7
+  );
+}
+
+function isSatelliteNearZambia(sample: LiveSatelliteSample) {
+  return (
+    sample.latitude >= -25 &&
+    sample.latitude <= 0 &&
+    sample.longitude >= 12 &&
+    sample.longitude <= 45
+  );
+}
+
 type CommunityContributionSample = {
   id: number;
   title: string;
@@ -158,6 +177,101 @@ type LiveSatelliteLayerProps = {
   active: boolean;
   satellites: LiveSatelliteSample[];
 };
+
+function getSatellitePhase(name: string): number {
+  let hash = 0;
+  for (let i = 0; i < name.length; i += 1) {
+    hash = (hash * 31 + name.charCodeAt(i)) % 10_000;
+  }
+  return (hash / 10_000) * Math.PI * 2;
+}
+
+function LiveSatelliteNode({
+  sat,
+  selectedNow,
+  hoveredNow,
+  onSelect,
+  onHover,
+  onHoverEnd,
+}: {
+  sat: LiveSatelliteSample;
+  selectedNow: boolean;
+  hoveredNow: boolean;
+  onSelect: (sat: LiveSatelliteSample) => void;
+  onHover: (name: string) => void;
+  onHoverEnd: () => void;
+}) {
+  const coreRef = useRef<THREE.Mesh>(null);
+  const haloRef = useRef<THREE.Mesh>(null);
+  const pulseRef = useRef<THREE.Mesh>(null);
+  const phase = useMemo(() => getSatellitePhase(sat.name), [sat.name]);
+  const radius = THREE.MathUtils.clamp(1 + sat.altitudeKm / 45000, 1.03, 1.26);
+  const p = latLngToVector3(sat.latitude, sat.longitude, radius);
+  const baseSize = selectedNow ? 0.0145 : hoveredNow ? 0.013 : 0.0115;
+
+  useFrame(({ clock }) => {
+    const pulse = 0.5 + 0.5 * Math.sin(clock.elapsedTime * 2.8 + phase);
+    const shimmer = 0.5 + 0.5 * Math.sin(clock.elapsedTime * 6.5 + phase * 1.7);
+
+    if (coreRef.current) {
+      const coreMaterial = coreRef.current.material as THREE.MeshBasicMaterial;
+      coreRef.current.scale.setScalar(1 + pulse * (selectedNow ? 0.34 : hoveredNow ? 0.25 : 0.18));
+      coreMaterial.opacity = selectedNow ? 0.98 : hoveredNow ? 0.92 : 0.78 + shimmer * 0.18;
+      coreMaterial.color.set(selectedNow ? "#f6feff" : hoveredNow ? "#bdf6ff" : "#6fe6ff");
+    }
+
+    if (haloRef.current) {
+      const haloMaterial = haloRef.current.material as THREE.MeshBasicMaterial;
+      haloRef.current.scale.setScalar(1.15 + pulse * (selectedNow ? 1.7 : 1.25));
+      haloMaterial.opacity = selectedNow ? 0.3 + shimmer * 0.1 : hoveredNow ? 0.22 + shimmer * 0.08 : 0.12 + shimmer * 0.08;
+    }
+
+    if (pulseRef.current) {
+      const pulseMaterial = pulseRef.current.material as THREE.MeshBasicMaterial;
+      pulseRef.current.scale.setScalar(1.4 + pulse * (selectedNow ? 2.7 : 2.1));
+      pulseMaterial.opacity = selectedNow ? 0.16 + shimmer * 0.05 : hoveredNow ? 0.12 + shimmer * 0.04 : 0.06 + shimmer * 0.03;
+    }
+  });
+
+  return (
+    <group position={[p.x, p.y, p.z]}>
+      <mesh ref={pulseRef}>
+        <sphereGeometry args={[baseSize * 1.75, 12, 12]} />
+        <meshBasicMaterial color="#2ed3ff" transparent opacity={0.1} depthWrite={false} />
+      </mesh>
+      <mesh ref={haloRef}>
+        <sphereGeometry args={[baseSize * 1.28, 12, 12]} />
+        <meshBasicMaterial color="#39d8ff" transparent opacity={0.18} depthWrite={false} />
+      </mesh>
+      <mesh
+        ref={coreRef}
+        onClick={(event) => {
+          event.stopPropagation();
+          onSelect(sat);
+        }}
+        onPointerOver={(event) => {
+          event.stopPropagation();
+          onHover(sat.name);
+          document.body.style.cursor = "pointer";
+        }}
+        onPointerOut={() => {
+          onHoverEnd();
+          document.body.style.cursor = "auto";
+        }}
+      >
+        <sphereGeometry args={[baseSize, 14, 14]} />
+        <meshBasicMaterial color="#6fe6ff" transparent opacity={0.84} />
+      </mesh>
+      {selectedNow && (
+        <Html center distanceFactor={8}>
+          <div className="rounded border border-[#39d8ff]/45 bg-[rgba(3,10,14,0.92)] px-2 py-1 text-[9px] uppercase tracking-[0.12em] text-[#c8fbff] whitespace-nowrap shadow-[0_0_18px_rgba(57,216,255,0.18)]">
+            {sat.name} · {Math.round(sat.altitudeKm)} km
+          </div>
+        </Html>
+      )}
+    </group>
+  );
+}
 
 function LiveSatelliteLayer({ active, satellites }: LiveSatelliteLayerProps) {
   const [selected, setSelected] = useState<LiveSatelliteSample | null>(null);
@@ -188,44 +302,18 @@ function LiveSatelliteLayer({ active, satellites }: LiveSatelliteLayerProps) {
   return (
     <group onPointerMissed={() => setSelected(null)}>
       {satellites.map((sat) => {
-        const radius = THREE.MathUtils.clamp(1 + sat.altitudeKm / 45000, 1.03, 1.26);
-        const p = latLngToVector3(sat.latitude, sat.longitude, radius);
         const selectedNow = selected?.name === sat.name;
         const hoveredNow = hovered === sat.name;
-        const size = selectedNow ? 0.014 : hoveredNow ? 0.012 : 0.01;
-        const color = selectedNow ? "#f8e8ca" : hoveredNow ? "#c9a227" : "#B87333";
         return (
-          <group key={`${sat.name}-${sat.latitude.toFixed(2)}-${sat.longitude.toFixed(2)}`} position={[p.x, p.y, p.z]}>
-            <mesh
-              onClick={(event) => {
-                event.stopPropagation();
-                setSelected(sat);
-              }}
-              onPointerOver={(e) => {
-                e.stopPropagation();
-                setHovered(sat.name);
-                document.body.style.cursor = "pointer";
-              }}
-              onPointerOut={() => {
-                setHovered(null);
-                document.body.style.cursor = "auto";
-              }}
-            >
-              <octahedronGeometry args={[size, 0]} />
-              <meshBasicMaterial
-                color={color}
-                transparent
-                opacity={selectedNow ? 0.95 : hoveredNow ? 0.9 : 0.8}
-              />
-            </mesh>
-            {selectedNow && (
-              <Html center distanceFactor={8}>
-                <div className="rounded border border-copper/30 bg-panel/90 px-2 py-1 text-[9px] uppercase tracking-[0.12em] text-copperSoft whitespace-nowrap">
-                  {sat.name} · {Math.round(sat.altitudeKm)} km
-                </div>
-              </Html>
-            )}
-          </group>
+          <LiveSatelliteNode
+            key={`${sat.name}-${sat.latitude.toFixed(2)}-${sat.longitude.toFixed(2)}`}
+            sat={sat}
+            selectedNow={selectedNow}
+            hoveredNow={hoveredNow}
+            onSelect={setSelected}
+            onHover={setHovered}
+            onHoverEnd={() => setHovered(null)}
+          />
         );
       })}
     </group>
@@ -358,7 +446,7 @@ const DEFAULT_LAYERS: LayerVisibility = {
   space: false,
   earthObservation: false,
   liveSatellites: false,
-  community: true,
+  community: false,
 };
 
 const ATMOSPHERE_NEAR = 1.3;
@@ -378,6 +466,7 @@ function Scene({
   onMarkerSelect,
   layerVisibility = DEFAULT_LAYERS,
   showHUD = true,
+  liveSatelliteScope = "zambia",
   flyToCoordinate,
   flyToPin,
   onFlyToPinExpire,
@@ -403,7 +492,7 @@ function Scene({
   const africaCameraRef = useRef(africaCenteredCameraPosition(3.2));
   const snapActiveRef = useRef(false);
   const lobbyFocusDoneRef = useRef(false);
-  const [liveSatellites, setLiveSatellites] = useState<LiveSatelliteSample[]>([]);
+  const [liveSatellitePool, setLiveSatellitePool] = useState<LiveSatelliteSample[]>([]);
   const [approvedContributions, setApprovedContributions] = useState<CommunityContributionSample[]>([]);
   const [approvedMissions, setApprovedMissions] = useState<CommunityMissionSample[]>([]);
 
@@ -511,7 +600,7 @@ function Scene({
 
   useEffect(() => {
     if (layerVisibility.liveSatellites === false || layerVisibility.space === false) {
-      setLiveSatellites([]);
+      setLiveSatellitePool([]);
       return;
     }
 
@@ -525,8 +614,8 @@ function Scene({
           sample?: LiveSatelliteSample[];
         };
         if (cancelled) return;
-        const sample = Array.isArray(payload.sample) ? payload.sample.slice(0, 36) : [];
-        setLiveSatellites(sample);
+        const sample = Array.isArray(payload.sample) ? payload.sample : [];
+        setLiveSatellitePool(sample);
       } catch {
         // Keep prior sample while offline or during transient failures.
       }
@@ -540,6 +629,23 @@ function Scene({
       clearInterval(intervalId);
     };
   }, [layerVisibility.liveSatellites, layerVisibility.space]);
+
+  const liveSatellites = useMemo(() => {
+    if (liveSatelliteScope === "region") {
+      return liveSatellitePool.filter(isSatelliteNearZambia).slice(0, 60);
+    }
+
+    const overZambia = liveSatellitePool.filter(isSatelliteOverZambia);
+    const nearby = liveSatellitePool.filter(
+      (sample) => !isSatelliteOverZambia(sample) && isSatelliteNearZambia(sample)
+    );
+
+    if (overZambia.length > 0) {
+      return [...overZambia.slice(0, 8), ...nearby.slice(0, 4)];
+    }
+
+    return nearby.slice(0, 8);
+  }, [liveSatellitePool, liveSatelliteScope]);
   /**
    * Approved community memories load only when the archive community layer is active.
    * This keeps museum-first entry light and avoids public archive polling when hidden.
@@ -893,6 +999,7 @@ export function Globe({
   onMarkerSelect,
   layerVisibility,
   showHUD = true,
+  liveSatelliteScope = "zambia",
   flyToCoordinate,
   flyToPin,
   onFlyToPinExpire,
@@ -932,6 +1039,7 @@ export function Globe({
         onMarkerSelect={onMarkerSelect}
         layerVisibility={layerVisibility}
         showHUD={showHUD}
+        liveSatelliteScope={liveSatelliteScope}
         flyToCoordinate={flyToCoordinate}
         flyToPin={flyToPin}
         onFlyToPinExpire={onFlyToPinExpire}

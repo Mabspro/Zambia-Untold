@@ -205,3 +205,61 @@ Use this file as a lightweight continuity layer to reduce regressions across par
   - `npm run build` fails locally with `spawn EPERM` (environmental)
 - Follow-ups:
   - Keep this handoff doc as the canonical onboarding snapshot until replaced by the next dated review.
+
+## 2026-04-03 - Sprint 0 Front Door + Museum-First Defaults
+
+- Date: 2026-04-03
+- Area: Front-door orientation, mode architecture, archive trust
+- Intent: Deliver Sprint 0 by adding explicit entry routes, a canonical mode resolver, progress framing, and truthful archive messaging without disturbing the globe-first museum flow.
+- Invariants touched:
+  - Museum-first default preserved; observatory remains opt-in
+  - Community archive default restored to off for first-time visitors
+  - Intro/header remains a single visual anchor, now with explicit route guidance
+- Files changed:
+  - `app/page.tsx`
+  - `app/api/keepalive/route.ts`
+  - `components/Globe/Globe.tsx`
+  - `components/UI/ContributionForm.tsx`
+  - `components/untold/HeroIntroCard.tsx`
+  - `components/untold/EntryRoutes.tsx`
+  - `components/untold/ProgressPassport.tsx`
+  - `components/untold/WhyThisSignal.tsx`
+  - `components/untold/ContextRail.tsx`
+  - `components/untold/timeUtils.ts`
+  - `lib/untold/entry-routes.ts`
+  - `lib/untold/onboarding-state.ts`
+  - `lib/untold/ui-mode.ts`
+- Risk:
+  - Header card is taller and should get an additional visual/mobile pass on a live device
+  - Archive entry route currently points into contribution flow because a dedicated archive surface is not yet built
+- Regression checks run:
+  - `npm run typecheck` pass
+  - `npm run lint` blocked by local Windows `.next` cache `EPERM`
+- Follow-ups:
+  - Add dedicated archive/listing surface so `Enter the Archive` is not contribution-first
+  - Implement Sprint 0.5 present-state adapter and strip once zambiamacro public API is ready
+  - Run mobile and desktop visual verification after local file-lock issue clears
+
+## 2026-04-03 - Dedicated Archive Surface
+
+- Date: 2026-04-03
+- Area: Archive browse flow, front-door honesty, approved record discovery
+- Intent: Give `Enter the Archive` a real public destination that is browse-first, filterable, and read-only on entry, with contribution moved to a secondary CTA.
+- Invariants touched:
+  - No new archive API surface; reuse `/api/community/approved` and `/api/space/mission/approved`
+  - Globe remains homepage hero; archive route is a separate non-globe surface
+  - Contribution remains moderated and secondary to browsing
+- Files changed:
+  - `app/archive/page.tsx`
+  - `components/untold/ArchiveSurface.tsx`
+  - `app/api/community/approved/route.ts`
+  - `lib/server/provinceLookup.ts`
+  - `app/page.tsx`
+- Risk:
+  - Province derivation depends on the normalized province GeoJSON staying accurate
+  - Archive public browsing currently depends on the same approved endpoint used by the globe, so backward compatibility of that payload should be watched
+- Regression checks run:
+  - pending
+- Follow-ups:
+  - Add direct links from archive cards back into relevant globe moments once route affordances are defined
+  - Implement Sprint 0.5 `UntoldPresentState` and `/api/zambia-macro/state`

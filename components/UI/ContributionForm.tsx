@@ -97,6 +97,7 @@ type ContributionFormProps = {
 export function ContributionForm({ onClose, onSubmitted }: ContributionFormProps) {
   const [form, setForm] = useState<ContributionFormData>(INITIAL_FORM);
   const [submitted, setSubmitted] = useState(false);
+  const [submissionStorage, setSubmissionStorage] = useState<"supabase" | "local-fallback" | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -171,6 +172,7 @@ export function ContributionForm({ onClose, onSubmitted }: ContributionFormProps
     }
 
     setSubmitting(false);
+    setSubmissionStorage(storageMode);
     setSubmitted(true);
     onSubmitted?.();
   };
@@ -238,10 +240,18 @@ export function ContributionForm({ onClose, onSubmitted }: ContributionFormProps
                 </svg>
               </div>
               <h3 className="font-display text-xl text-text mb-2">Thank You</h3>
-              <p className="text-[13px] text-[#B8A58F] leading-relaxed max-w-[360px]">
-                Your contribution has been saved on this device for the Isibalo pilot. Moderated
-                publishing to the shared archive starts in the next backend phase.
-              </p>
+              {submissionStorage === "supabase" ? (
+                <p className="text-[13px] text-[#B8A58F] leading-relaxed max-w-[360px]">
+                  Your contribution has been submitted to the shared Isibalo archive and is now
+                  awaiting moderation before it appears on the globe.
+                </p>
+              ) : (
+                <p className="text-[13px] text-[#B8A58F] leading-relaxed max-w-[360px]">
+                  Your contribution has been saved on this device because the shared archive was not
+                  available just now. You can still keep exploring, and retry later when the backend
+                  path is live again.
+                </p>
+              )}
               <button
                 type="button"
                 onClick={onClose}

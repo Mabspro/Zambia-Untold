@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 export type { LayerVisibility } from "@/lib/types";
 import type { LayerVisibility } from "@/lib/types";
 import type { DeepTimeZone } from "@/lib/deepTime";
@@ -39,6 +39,7 @@ const HUMAN_TIME_ERAS: EraItem[] = [
 type LayersPanelProps = {
   positionStyle?: CSSProperties;
   contentMaxHeight?: string;
+  collapseSignal?: number;
   visibility: LayerVisibility;
   onVisibilityChange: (v: LayerVisibility) => void;
   onEraSelect?: (year: number) => void;
@@ -51,6 +52,7 @@ type LayersPanelProps = {
 export function LayersPanel({
   positionStyle,
   contentMaxHeight,
+  collapseSignal = 0,
   visibility,
   onVisibilityChange,
   onEraSelect,
@@ -61,6 +63,11 @@ export function LayersPanel({
 }: LayersPanelProps) {
   const [collapsed, setCollapsed] = useState(true);
   const [hoveredEra, setHoveredEra] = useState<DeepTimeZone | null>(null);
+
+  useEffect(() => {
+    setCollapsed(true);
+    onExpandedChange?.(false);
+  }, [collapseSignal, onExpandedChange]);
 
   const toggle = (key: keyof LayerVisibility) => {
     const current = visibility[key];
