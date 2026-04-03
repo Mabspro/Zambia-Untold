@@ -23,6 +23,7 @@ type HeroIntroCardProps = {
   onToggleWhyThisSignal: () => void;
   onShowRoutes?: () => void;
   onHideRoutes?: () => void;
+  onReturnToLanding?: () => void;
   onEnterArchive?: () => void;
   timeControls: ReactNode;
 };
@@ -43,6 +44,7 @@ export function HeroIntroCard({
   onToggleWhyThisSignal,
   onShowRoutes,
   onHideRoutes,
+  onReturnToLanding,
   onEnterArchive,
   timeControls,
 }: HeroIntroCardProps) {
@@ -86,6 +88,13 @@ export function HeroIntroCard({
             </button>
             <button
               type="button"
+              onClick={onReturnToLanding}
+              className="min-h-10 rounded border border-copper/25 px-3 py-1.5 text-[11px] uppercase tracking-[0.14em] text-copperSoft transition-colors hover:border-copper/45 hover:text-copper"
+            >
+              Return to landing
+            </button>
+            <button
+              type="button"
               onClick={onEnterArchive}
               className="min-h-10 rounded border border-copper/35 bg-copper/10 px-3 py-1.5 text-[11px] uppercase tracking-[0.14em] text-copper transition-colors hover:border-copper hover:bg-copper/15"
             >
@@ -116,6 +125,17 @@ export function HeroIntroCard({
             </button>
           )}
         </div>
+        {mode === "living" && onReturnToLanding && (
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={onReturnToLanding}
+              className="block min-h-10 rounded border border-copper/20 px-3 py-1.5 text-[11px] uppercase tracking-[0.14em] text-copperSoft transition-colors hover:border-copper/40 hover:text-copper"
+            >
+              Return to landing
+            </button>
+          </div>
+        )}
         <p className="mt-1.5 text-[12px] uppercase tracking-[0.22em] text-muted md:text-[13px] lg:text-[14px]">
           The history you were never taught
         </p>

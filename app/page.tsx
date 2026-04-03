@@ -225,6 +225,24 @@ function HomePageContent() {
     setSatelliteScope("zambia");
   }, [clearLobbyTimers, updateReturningHints]);
 
+  const returnToLanding = useCallback(() => {
+    setHeroExpanded(true);
+    setSatelliteScope("zambia");
+    setObservatoryIntent(false);
+    setLayerVisibility((prev) => ({
+      ...prev,
+      space: false,
+      earthObservation: false,
+      liveSatellites: false,
+    }));
+    setSelectedMarkerId(null);
+    setActivePanel(null);
+    setShowWhyThisSignal(false);
+    setContextualCardDismissed(true);
+    setShowNkolosoCinematic(false);
+    setReentryZone(null);
+  }, []);
+
   const handleYearChange = useCallback((year: number) => {
     setHasUserMovedScrubber(true);
     setScrubYear(year);
@@ -754,6 +772,7 @@ function HomePageContent() {
             onToggleWhyThisSignal={() => setShowWhyThisSignal((prev) => !prev)}
             onShowRoutes={() => setHeroExpanded(true)}
             onHideRoutes={() => setHeroExpanded(false)}
+            onReturnToLanding={returnToLanding}
             onEnterArchive={() => handleEntryRouteSelect("archive")}
             timeControls={(
               <TimeButtons
