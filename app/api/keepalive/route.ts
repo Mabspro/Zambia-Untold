@@ -22,7 +22,7 @@ export async function GET() {
   try {
     const supabase = createClient(url, key)
     const { error } = await supabase
-      .from('community_submissions')
+      .from('isibalo_submissions')
       .select('id')
       .limit(1)
 
