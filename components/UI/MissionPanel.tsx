@@ -10,6 +10,7 @@ type MissionPanelProps = {
   onSetActiveMission: (missionId: string) => void;
   startExpanded?: boolean;
   showPulseCue?: boolean;
+  onCloseMobile?: () => void;
 };
 
 function getMissionCompletionCount(mission: Mission, progress: MissionProgress): number {
@@ -22,6 +23,7 @@ export function MissionPanel({
   onSetActiveMission,
   startExpanded = false,
   showPulseCue = false,
+  onCloseMobile,
 }: MissionPanelProps) {
   const [collapsed, setCollapsed] = useState(!startExpanded);
   const [showAll, setShowAll] = useState(false);
@@ -101,36 +103,52 @@ export function MissionPanel({
       >
         <AnimatePresence mode="wait" initial={false}>
           {collapsed ? (
-            <motion.button
+            <motion.div
               key="collapsed"
-              type="button"
-              onClick={() => setCollapsed(false)}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 6 }}
               className="terminal-panel w-full border border-copper/30 bg-[#0A0806]/95 px-3.5 py-2.5 text-left shadow-[0_0_22px_rgba(184,115,51,0.08)]"
             >
-              <div className="flex items-center justify-between gap-2">
-                <p className="font-mono text-[12px] uppercase tracking-[0.15em] text-copperSoft/90">
-                  <span
-                    className={
-                      showPulseCue && !missionOneComplete
-                        ? "inline-block animate-[mission-cue_30s_ease-in-out_infinite]"
-                        : "inline-block"
-                    }
+              <div className="flex items-start justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCollapsed(false)}
+                  className="flex-1 text-left"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-mono text-[12px] uppercase tracking-[0.15em] text-copperSoft/90">
+                      <span
+                        className={
+                          showPulseCue && !missionOneComplete
+                            ? "inline-block animate-[mission-cue_30s_ease-in-out_infinite]"
+                            : "inline-block"
+                        }
+                      >
+                        ▶
+                      </span>{" "}
+                      {currentMission.title}
+                    </p>
+                    <span className="font-mono text-[12px] text-copper/80" aria-hidden>
+                      ▴
+                    </span>
+                  </div>
+                  <p className="mt-1.5 text-[12px] leading-relaxed text-[#9b7d60]">
+                    {currentMission.description}
+                  </p>
+                </button>
+                {onCloseMobile && (
+                  <button
+                    type="button"
+                    onClick={onCloseMobile}
+                    className="min-h-10 rounded border border-copper/20 px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.12em] text-muted/80 hover:border-copper/35 hover:text-copper md:hidden"
+                    aria-label="Hide mission panel"
                   >
-                    ▶
-                  </span>{" "}
-                  {currentMission.title}
-                </p>
-                <span className="font-mono text-[12px] text-copper/80" aria-hidden>
-                  ▴
-                </span>
+                    Close
+                  </button>
+                )}
               </div>
-              <p className="mt-1.5 text-[12px] leading-relaxed text-[#9b7d60]">
-                {currentMission.description}
-              </p>
-            </motion.button>
+            </motion.div>
           ) : (
             <motion.div
               key="expanded"
@@ -141,17 +159,29 @@ export function MissionPanel({
             >
               <div className="flex items-start justify-between gap-2">
                 <p className="font-mono text-[12px] uppercase tracking-[0.15em] text-[#9b7d60]">ZAMBIA UNTOLD · MISSION SYSTEM</p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setUserCollapsed(true);
-                    setCollapsed(true);
-                  }}
-                  className="min-h-11 border border-copper/25 px-3 py-1 font-mono text-[12px] uppercase tracking-[0.12em] text-muted/80 hover:text-text"
-                  aria-label="Collapse mission panel"
-                >
-                  ▾
-                </button>
+                <div className="flex items-center gap-2">
+                  {onCloseMobile && (
+                    <button
+                      type="button"
+                      onClick={onCloseMobile}
+                      className="min-h-10 border border-copper/20 px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.12em] text-muted/80 hover:border-copper/35 hover:text-copper md:hidden"
+                      aria-label="Hide mission panel"
+                    >
+                      Close
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUserCollapsed(true);
+                      setCollapsed(true);
+                    }}
+                    className="min-h-11 border border-copper/25 px-3 py-1 font-mono text-[12px] uppercase tracking-[0.12em] text-muted/80 hover:text-text"
+                    aria-label="Collapse mission panel"
+                  >
+                    ▾
+                  </button>
+                </div>
               </div>
               <div className="mt-1 border-t border-copper/25" />
               <p className="mt-2 font-display text-[13px] uppercase tracking-[0.16em] text-copper">{currentMission.title}</p>

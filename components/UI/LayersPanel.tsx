@@ -47,6 +47,7 @@ type LayersPanelProps = {
   onSelectMarker?: (markerId: string) => void;
   onOpenSpaceMission?: () => void;
   visitedZones?: DeepTimeZone[];
+  onCloseMobile?: () => void;
 };
 
 export function LayersPanel({
@@ -60,6 +61,7 @@ export function LayersPanel({
   onSelectMarker,
   onOpenSpaceMission,
   visitedZones = [],
+  onCloseMobile,
 }: LayersPanelProps) {
   const [collapsed, setCollapsed] = useState(true);
   const [hoveredEra, setHoveredEra] = useState<DeepTimeZone | null>(null);
@@ -103,18 +105,30 @@ export function LayersPanel({
 
   return (
     <aside style={positionStyle} className="pointer-events-auto absolute z-50 rounded border border-copper/30 bg-bg/90 backdrop-blur-xl">
-      <button
-        type="button"
-        onClick={() => {
-          const next = !collapsed;
-          setCollapsed(next);
-          onExpandedChange?.(!next);
-        }}
-        className="font-display flex w-full items-center justify-between rounded-t px-4 py-3 text-[11px] uppercase tracking-[0.2em] text-copperSoft transition-colors hover:bg-copper/10"
-      >
-        Map Layers
-        <span className="text-xs text-muted">{collapsed ? "▾" : "▴"}</span>
-      </button>
+      <div className="flex items-center justify-between gap-2 rounded-t">
+        <button
+          type="button"
+          onClick={() => {
+            const next = !collapsed;
+            setCollapsed(next);
+            onExpandedChange?.(!next);
+          }}
+          className="font-display flex min-h-11 flex-1 items-center justify-between px-4 py-3 text-[11px] uppercase tracking-[0.2em] text-copperSoft transition-colors hover:bg-copper/10"
+        >
+          Map Layers
+          <span className="text-xs text-muted">{collapsed ? "▾" : "▴"}</span>
+        </button>
+        {onCloseMobile && (
+          <button
+            type="button"
+            onClick={onCloseMobile}
+            className="mr-2 flex min-h-10 min-w-10 items-center justify-center rounded border border-copper/20 px-2 text-[12px] uppercase tracking-[0.12em] text-muted/80 transition-colors hover:border-copper/35 hover:text-copper md:hidden"
+            aria-label="Hide map layers"
+          >
+            Close
+          </button>
+        )}
+      </div>
 
       {!collapsed && (
         <div style={{ maxHeight: contentMaxHeight }} className="overflow-y-auto space-y-1 border-t border-copper/20 px-4 py-3">

@@ -74,6 +74,7 @@ type SpaceSignalProps = {
   onOpenMissionBuilder?: () => void;
   onEnterArchive?: () => void;
   guidedTourActive?: boolean;
+  onMobileClose?: () => void;
 };
 
 export function SpaceSignal({
@@ -86,6 +87,7 @@ export function SpaceSignal({
   onToggleSatelliteScope,
   onEnterArchive,
   guidedTourActive,
+  onMobileClose,
 }: SpaceSignalProps) {
   const [data, setData] = useState<SpaceSignalPayload | null>(null);
   const [norad, setNorad] = useState<NoradPayload | null>(null);
@@ -313,6 +315,15 @@ export function SpaceSignal({
             <div className="flex items-center justify-between gap-2">
               <p className="font-display text-[12px] uppercase tracking-[0.16em] text-copperSoft">Space Signal</p>
               <div className="flex items-center gap-2">
+                {onMobileClose && (
+                  <button
+                    type="button"
+                    onClick={onMobileClose}
+                    className="min-h-10 rounded border border-copper/20 px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] text-muted/80"
+                  >
+                    Close
+                  </button>
+                )}
                 <p className="font-mono text-[12px] uppercase tracking-[0.1em] text-muted/75">
                   {loading ? "Activating" : `Sat over ZM: ${norad?.counts.overZambiaNow ?? 0}`}
                 </p>
@@ -329,13 +340,24 @@ export function SpaceSignal({
             <>
               <div className="flex items-center justify-between gap-2">
                 <p className="font-display text-[12px] uppercase tracking-[0.16em] text-copperSoft">Space Signal</p>
-                <button
-                  type="button"
-                  onClick={() => setMobileExpanded(false)}
-                  className="min-h-11 rounded border border-copper/25 px-3 py-1.5 text-[12px] uppercase tracking-[0.12em] text-muted/80"
-                >
-                  Close
-                </button>
+                <div className="flex items-center gap-2">
+                  {onMobileClose && (
+                    <button
+                      type="button"
+                      onClick={onMobileClose}
+                      className="min-h-10 rounded border border-copper/20 px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] text-muted/80"
+                    >
+                      Hide
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setMobileExpanded(false)}
+                    className="min-h-11 rounded border border-copper/25 px-3 py-1.5 text-[12px] uppercase tracking-[0.12em] text-muted/80"
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
               {loading ? (
                 <p className="mt-2 text-[12px] leading-relaxed text-muted/80">

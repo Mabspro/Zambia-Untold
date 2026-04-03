@@ -10,6 +10,7 @@ import {
 type PresentSignalStripProps = {
   active: boolean;
   mobileBottomOffset: number;
+  onMobileClose?: () => void;
 };
 
 function formatNumber(value: number | null, digits = 2): string {
@@ -134,7 +135,7 @@ function SignalBody({ data, loading }: { data: UntoldPresentState; loading: bool
   );
 }
 
-export function PresentSignalStrip({ active, mobileBottomOffset }: PresentSignalStripProps) {
+export function PresentSignalStrip({ active, mobileBottomOffset, onMobileClose }: PresentSignalStripProps) {
   const [data, setData] = useState<UntoldPresentState>(FALLBACK_PRESENT_STATE);
   const [loading, setLoading] = useState(true);
 
@@ -174,6 +175,17 @@ export function PresentSignalStrip({ active, mobileBottomOffset }: PresentSignal
         className="pointer-events-auto absolute left-3 right-3 z-20 rounded border border-copper/25 bg-bg/88 p-3 backdrop-blur-sm md:hidden"
         style={{ bottom: `calc(env(safe-area-inset-bottom, 0px) + ${mobileBottomOffset}px)` }}
       >
+        {onMobileClose && (
+          <div className="mb-3 flex items-center justify-end">
+            <button
+              type="button"
+              onClick={onMobileClose}
+              className="min-h-10 rounded border border-copper/20 px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] text-muted/80 transition-colors hover:border-copper/35 hover:text-copper"
+            >
+              Close
+            </button>
+          </div>
+        )}
         <SignalBody data={data} loading={loading} />
       </aside>
     </>

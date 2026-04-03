@@ -128,6 +128,10 @@ function HomePageContent() {
   const [heroExpanded, setHeroExpanded] = useState(true);
   const [layersCollapseSignal, setLayersCollapseSignal] = useState(0);
   const [satelliteScope, setSatelliteScope] = useState<"zambia" | "region">("zambia");
+  const [mobileLayersVisible, setMobileLayersVisible] = useState(true);
+  const [mobileMissionVisible, setMobileMissionVisible] = useState(true);
+  const [mobileSpaceSignalVisible, setMobileSpaceSignalVisible] = useState(true);
+  const [mobilePresentSignalVisible, setMobilePresentSignalVisible] = useState(true);
   const didBootRef = useRef(false);
   const headerCardRef = useRef<HTMLDivElement | null>(null);
   const [headerHeight, setHeaderHeight] = useState(210);
@@ -153,6 +157,13 @@ function HomePageContent() {
     const merged = mergeReturningUserHints(next);
     setReturningHints(merged);
     return merged;
+  }, []);
+
+  const restoreMobileChrome = useCallback(() => {
+    setMobileLayersVisible(true);
+    setMobileMissionVisible(true);
+    setMobileSpaceSignalVisible(true);
+    setMobilePresentSignalVisible(true);
   }, []);
 
   const focusLiveZambia = useCallback(() => {
@@ -223,7 +234,8 @@ function HomePageContent() {
     setShowWhyThisSignal(false);
     setHeroExpanded(true);
     setSatelliteScope("zambia");
-  }, [clearLobbyTimers, updateReturningHints]);
+    restoreMobileChrome();
+  }, [clearLobbyTimers, restoreMobileChrome, updateReturningHints]);
 
   const returnToLanding = useCallback(() => {
     setHeroExpanded(true);
@@ -241,7 +253,8 @@ function HomePageContent() {
     setContextualCardDismissed(true);
     setShowNkolosoCinematic(false);
     setReentryZone(null);
-  }, []);
+    restoreMobileChrome();
+  }, [restoreMobileChrome]);
 
   const handleYearChange = useCallback((year: number) => {
     setHasUserMovedScrubber(true);
@@ -253,6 +266,7 @@ function HomePageContent() {
 
   const handleEntryRouteSelect = useCallback((route: EntryRoute) => {
     updateReturningHints({ lastEntryRoute: route });
+    restoreMobileChrome();
     setShowWhyThisSignal(route === "live-zambia");
     setReentryZone(null);
     setShowGuidedTour(false);
@@ -303,7 +317,7 @@ function HomePageContent() {
       focusLiveZambia();
       return;
     }
-  }, [focusLiveZambia, router, updateReturningHints]);
+  }, [focusLiveZambia, restoreMobileChrome, router, updateReturningHints]);
 
   const selectedMarker = useMemo(
     () => MARKERS.find((m) => m.id === selectedMarkerId) ?? null,
@@ -501,7 +515,13 @@ function HomePageContent() {
   // Show interaction-driven guided tour when lobby is done and tour not yet seen
   useEffect(() => {
     if (lobbyPhase !== "done" || typeof window === "undefined") return;
-    if (!window.sessionStorage.getItem(TOUR_STORAGE_KEY)) setShowGuidedTour(true);
+    if (window.sessionStorage.getItem(TOUR_STORAGE_KEY)) return;
+    if (window.innerWidth < 768) {
+      setGuidedTourCompleted(true);
+      setShowGuidedTour(false);
+      return;
+    }
+    setShowGuidedTour(true);
   }, [lobbyPhase]);
 
 
@@ -658,8 +678,17 @@ function HomePageContent() {
     ? { top: layersTop, left: headerSideInset, width: 270 }
     : { top: layersTop, left: headerSideInset, right: headerSideInset };
   const guidedHeaderBottom = headerBottom + (layersExpanded ? 40 : 12);
-  const hideMobileAuxOverlays = !safe.isDesktop && (layersExpanded || showGuidedTour);
+  const guidedTourActive = safe.isDesktop && showGuidedTour;
+  const hideMobileAuxOverlays = !safe.isDesktop && (layersExpanded || guidedTourActive);
   const mobileBottomInsetPx = safe.isDesktop ? safe.actionBottom : safe.actionBottom + 52;
+  const mobileLandingScrollActive =
+    !safe.isDesktop &&
+    showUI &&
+    heroExpanded &&
+    !observatoryActive &&
+    activePanel === null &&
+    !layersExpanded;
+  const mobilePromptStackBlocked = !safe.isDesktop && (mobileLandingScrollActive || showLowFiPrompt);
   const contextualCard = getContextualCardForYear(scrubYear);
   const narrativePanelOpen = !!(selectedMarkerId || (contextualCard && !contextualCardDismissed));
 
@@ -747,15 +776,30 @@ function HomePageContent() {
 
       {/* Header: Title + Time Navigation — single card to avoid stacked look */}
       <header
-        className={`absolute z-30 flex flex-col items-center justify-center gap-0 transition-opacity duration-700 md:justify-start md:items-start md:px-0 ${showUI ? "opacity-100" : "opacity-0"}`}
+        className={`absolute z-30 flex flex-col items-center gap-0 transition-opacity duration-700 md:items-start md:px-0 ${
+          mobileLandingScrollActive ? "justify-start" : "justify-center md:justify-start"
+        } ${showUI ? "opacity-100" : "opacity-0"}`}
         style={{
           top: headerTop,
           ...(safe.isDesktop
             ? { left: headerSideInset, right: "auto" }
-            : { left: safe.sideInset, right: safe.sideInset }),
+            : mobileLandingScrollActive
+              ? {
+                  left: safe.sideInset,
+                  right: safe.sideInset,
+                  bottom: `calc(env(safe-area-inset-bottom, 0px) + ${mobileBottomInsetPx + 150}px)`,
+                }
+              : { left: safe.sideInset, right: safe.sideInset }),
         }}
       >
-        <div ref={headerCardRef}>
+        <div
+          ref={headerCardRef}
+          className={
+            mobileLandingScrollActive
+              ? "max-h-full overflow-y-auto overscroll-contain pr-1 scrollbar-thin"
+              : undefined
+          }
+        >
           <HeroIntroCard
             mode={currentMode}
             activeRoute={activeEntryRoute}
@@ -810,7 +854,7 @@ function HomePageContent() {
       )}
 
       {/* Re-entry prompt — anchored into the left archive column, below the header card. */}
-      {reentryZone && isDone && (
+      {reentryZone && isDone && (!mobilePromptStackBlocked || safe.isDesktop) && (
         <aside
           className="pointer-events-auto absolute left-3 right-3 z-30 rounded border border-copper/35 bg-bg/90 px-4 py-3 text-left backdrop-blur md:left-6 md:right-auto md:w-[420px]"
           style={{ top: headerBottom + 12 }}
@@ -992,38 +1036,41 @@ function HomePageContent() {
       )}
 
       {/* Layers Panel */}
-      <div
-        className={`absolute inset-0 z-20 pointer-events-none transition-opacity duration-700 ${
-          showUI ? "opacity-100" : "opacity-0"
-        }`}
-      >
-        <LayersPanel
-          positionStyle={layersPositionStyle}
-          contentMaxHeight={layersContentMaxHeight}
-          collapseSignal={layersCollapseSignal}
-          visibility={layerVisibility}
-          onVisibilityChange={setLayerVisibility}
-          visitedZones={visitedZones}
-          onExpandedChange={setLayersExpanded}
-          onSelectMarker={(markerId) => {
-            const marker = MARKERS.find((m) => m.id === markerId);
-            if (!marker) return;
-            setSelectedMarkerId(marker.id);
-            setScrubYear(marker.epoch);
-            setContextualCardDismissed(false);
-            setActivePanel(null);
-            setShowNkolosoCinematic(marker.id === "nkoloso-space-academy");
-          }}
-          onOpenSpaceMission={() => openPanel("spaceMission")}
-          onEraSelect={(year) => {
-            setHasUserMovedScrubber(true);
-            setScrubYear(year);
-            setSelectedMarkerId(null);
-            setContextualCardDismissed(false);
-            setShowNkolosoCinematic(false);
-          }}
-        />
-      </div>
+      {(safe.isDesktop || mobileLayersVisible) && (
+        <div
+          className={`absolute inset-0 z-20 pointer-events-none transition-opacity duration-700 ${
+            showUI ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <LayersPanel
+            positionStyle={layersPositionStyle}
+            contentMaxHeight={layersContentMaxHeight}
+            collapseSignal={layersCollapseSignal}
+            visibility={layerVisibility}
+            onVisibilityChange={setLayerVisibility}
+            visitedZones={visitedZones}
+            onExpandedChange={setLayersExpanded}
+            onCloseMobile={() => setMobileLayersVisible(false)}
+            onSelectMarker={(markerId) => {
+              const marker = MARKERS.find((m) => m.id === markerId);
+              if (!marker) return;
+              setSelectedMarkerId(marker.id);
+              setScrubYear(marker.epoch);
+              setContextualCardDismissed(false);
+              setActivePanel(null);
+              setShowNkolosoCinematic(marker.id === "nkoloso-space-academy");
+            }}
+            onOpenSpaceMission={() => openPanel("spaceMission")}
+            onEraSelect={(year) => {
+              setHasUserMovedScrubber(true);
+              setScrubYear(year);
+              setSelectedMarkerId(null);
+              setContextualCardDismissed(false);
+              setShowNkolosoCinematic(false);
+            }}
+          />
+        </div>
+      )}
 
       {showUI && <DataIssueBanner />}
       {showUI && (
@@ -1039,7 +1086,7 @@ function HomePageContent() {
           onSelectRoute={handleEntryRouteSelect}
         />
       )}
-      {observatoryActive && !hideMobileAuxOverlays && (
+      {observatoryActive && !hideMobileAuxOverlays && (safe.isDesktop || mobileSpaceSignalVisible) && (
         <SpaceSignal
           enabled={observatoryActive}
           earthObservationEnabled={layerVisibility.earthObservation !== false}
@@ -1054,25 +1101,27 @@ function HomePageContent() {
           }
           onEnterArchive={() => handleEntryRouteSelect("archive")}
           onOpenMissionBuilder={() => openPanel("spaceMission")}
-          guidedTourActive={showGuidedTour}
+          guidedTourActive={guidedTourActive}
+          onMobileClose={() => setMobileSpaceSignalVisible(false)}
         />
       )}
 
-      {showUI && currentMode === "living" && !hideMobileAuxOverlays && (
+      {showUI && currentMode === "living" && !hideMobileAuxOverlays && (safe.isDesktop || mobilePresentSignalVisible) && (
         <PresentSignalStrip
           active
           mobileBottomOffset={mobileBottomInsetPx + 108}
+          onMobileClose={() => setMobilePresentSignalVisible(false)}
         />
       )}
 
       {/* Sovereignty Stack — museum/deep-time support panel, hidden in live observatory mode to keep focus on the present lens. */}
-      {showUI && !observatoryActive && !layersExpanded && !showGuidedTour && (
+      {showUI && !observatoryActive && !layersExpanded && !guidedTourActive && !mobileLandingScrollActive && (
         <SovereigntyStack year={scrubYear} />
       )}
 
       {/* Story Compass — persistent "You Are Here" context indicator.
           Museum corner label aesthetic — a whisper, not a headline. */}
-      {showUI && (
+      {showUI && !mobileLandingScrollActive && (
         <StoryCompass
           scrubYear={scrubYear}
           selectedMarker={selectedMarker}
@@ -1080,11 +1129,12 @@ function HomePageContent() {
         />
       )}
 
-      {showUI && !observatoryActive && !hideMobileAuxOverlays && (
+      {showUI && !observatoryActive && !hideMobileAuxOverlays && !mobileLandingScrollActive && (safe.isDesktop || mobileMissionVisible) && (
         <MissionPanel
           progress={missionProgress}
           startExpanded={false}
           showPulseCue={guidedTourCompleted}
+          onCloseMobile={() => setMobileMissionVisible(false)}
           onSetActiveMission={(missionId) => {
             setMissionProgress((prev) => {
               const next = { ...prev, lastActiveMission: missionId };
@@ -1094,6 +1144,43 @@ function HomePageContent() {
           }}
         />
       )}
+
+      {showUI && !safe.isDesktop && !guidedTourActive && (() => {
+        const reopenChips: Array<{ id: string; label: string; onClick: () => void }> = [];
+
+        if (!mobileLayersVisible) {
+          reopenChips.push({ id: "layers", label: "Map Layers", onClick: () => setMobileLayersVisible(true) });
+        }
+        if (!mobileMissionVisible && !observatoryActive && !mobileLandingScrollActive) {
+          reopenChips.push({ id: "mission", label: "Mission", onClick: () => setMobileMissionVisible(true) });
+        }
+        if (!mobileSpaceSignalVisible && observatoryActive) {
+          reopenChips.push({ id: "space", label: "Space Signal", onClick: () => setMobileSpaceSignalVisible(true) });
+        }
+        if (!mobilePresentSignalVisible && currentMode === "living" && !hideMobileAuxOverlays) {
+          reopenChips.push({ id: "present", label: "Present Signal", onClick: () => setMobilePresentSignalVisible(true) });
+        }
+
+        if (reopenChips.length === 0) return null;
+
+        return (
+          <div
+            className="pointer-events-auto absolute left-3 right-3 z-30 flex gap-2 overflow-x-auto pb-1 md:hidden"
+            style={{ bottom: `calc(env(safe-area-inset-bottom, 0px) + ${mobileBottomInsetPx + 62}px)` }}
+          >
+            {reopenChips.map((chip) => (
+              <button
+                key={chip.id}
+                type="button"
+                onClick={chip.onClick}
+                className="shrink-0 rounded border border-copper/25 bg-bg/88 px-3 py-2 text-[11px] uppercase tracking-[0.14em] text-copperSoft backdrop-blur-sm"
+              >
+                Show {chip.label}
+              </button>
+            ))}
+          </div>
+        );
+      })()}
 
       <MissionBadgeOverlay
         visible={badgeOverlayMissionId !== null}
@@ -1106,7 +1193,10 @@ function HomePageContent() {
       />
 
       {showUI && showLowFiPrompt && (
-        <aside className="fixed inset-x-3 top-[22vh] z-50 border border-copper/35 bg-[#0A0806]/95 px-3 py-3 backdrop-blur md:hidden terminal-panel">
+        <aside
+          className="fixed inset-x-3 z-50 border border-copper/35 bg-[#0A0806]/96 px-3 py-3 backdrop-blur md:hidden terminal-panel"
+          style={{ bottom: `calc(env(safe-area-inset-bottom, 0px) + ${mobileBottomInsetPx + 84}px)` }}
+        >
           <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-copperSoft">Mobile detected</p>
           <p className="mt-2 text-[14px] leading-relaxed text-[#D8C9B4]">
             Enable Low-Fi mode for smoother performance on this device?
@@ -1114,7 +1204,7 @@ function HomePageContent() {
           <div className="mt-3 flex items-center justify-end gap-2">
             <button
               type="button"
-              className="min-h-11 rounded border border-copper/35 px-3 py-1.5 text-[11px] uppercase tracking-[0.14em] text-copperSoft"
+              className="min-h-11 rounded border border-[#2dbd6e]/60 bg-[#2dbd6e]/18 px-3 py-1.5 text-[11px] uppercase tracking-[0.14em] text-[#c8ffd9] shadow-[0_0_18px_rgba(45,189,110,0.18)]"
               onClick={() => {
                 if (typeof window !== "undefined") {
                   window.localStorage.setItem(LOW_FI_PROMPT_SEEN_KEY, "1");
@@ -1142,9 +1232,9 @@ function HomePageContent() {
       )}
 
       {/* Interaction-driven guided tour — first-time only, advances on globe drag / scrubber / marker click */}
-      {showUI && (
+      {showUI && (!mobilePromptStackBlocked || safe.isDesktop) && (
         <GuidedTourHints
-          active={showGuidedTour}
+          active={guidedTourActive}
           onComplete={() => {
             if (typeof window !== "undefined") {
               window.sessionStorage.setItem(TOUR_STORAGE_KEY, "1");

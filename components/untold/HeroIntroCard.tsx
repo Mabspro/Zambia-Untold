@@ -108,7 +108,7 @@ export function HeroIntroCard({
 
   return (
     <div className="museum-card pointer-events-auto w-full max-w-[min(94vw,460px)] overflow-hidden rounded border border-copper/25 bg-bg/70 backdrop-blur-sm md:w-auto md:max-w-none">
-      <div className="px-5 py-4 text-center md:text-left">
+      <div className="sticky top-0 z-10 border-b border-copper/16 bg-[linear-gradient(180deg,rgba(10,8,6,0.96)_0%,rgba(10,8,6,0.94)_100%)] px-5 py-4 text-center backdrop-blur-md md:static md:border-b-0 md:bg-transparent md:text-left md:backdrop-blur-0">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="font-display text-[1.75rem] tracking-[0.2em] text-copper md:text-[2.15rem] lg:text-[2.45rem]">
@@ -156,7 +156,7 @@ export function HeroIntroCard({
         )}
       </div>
 
-      <div className="border-t border-copper/20 px-4 py-4">
+      <div className="px-4 py-4 md:border-t md:border-copper/20">
         <EntryRoutes
           items={ENTRY_ROUTE_ITEMS}
           activeRoute={activeRoute}
