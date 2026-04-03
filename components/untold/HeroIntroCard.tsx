@@ -109,7 +109,7 @@ export function HeroIntroCard({
 
   if (condensed) {
     return (
-      <div className={`museum-card pointer-events-auto w-full max-w-[min(94vw,430px)] overflow-hidden rounded border backdrop-blur-sm md:w-auto md:max-w-none ${chrome.border} ${chrome.bg}`}>
+      <div className={`museum-card pointer-events-auto w-full max-w-[min(94vw,430px)] overflow-hidden rounded border backdrop-blur-md shadow-[0_10px_30px_rgba(0,0,0,0.24)] md:w-auto md:max-w-none ${chrome.border} ${chrome.bg}`}>
         <div className="px-4 py-3">
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -124,7 +124,7 @@ export function HeroIntroCard({
               {mode === "living" ? "Present Lens" : mode === "deep-time" ? "Substrate Lens" : "Mode Active"}
             </span>
           </div>
-          <p className={`mt-2 text-[13px] leading-relaxed md:text-[14px] ${chrome.body}`}>
+          <p className={`mt-2 text-[13px] leading-relaxed drop-shadow-[0_1px_0_rgba(0,0,0,0.28)] md:text-[14px] ${chrome.body}`}>
             {mode === "living"
               ? "Live Zambia is active. The globe is primary now, and live systems stay in view."
               : mode === "deep-time"
@@ -135,14 +135,14 @@ export function HeroIntroCard({
             <button
               type="button"
               onClick={onShowRoutes}
-              className="min-h-10 rounded border border-copper/25 px-3 py-1.5 text-[11px] uppercase tracking-[0.14em] text-copperSoft transition-colors hover:border-copper/45 hover:text-copper"
+              className="min-h-10 rounded border border-copper/30 bg-[#0a0907]/72 px-3 py-1.5 text-[11px] uppercase tracking-[0.14em] text-copperSoft transition-colors hover:border-copper/45 hover:text-copper"
             >
               Menu
             </button>
             <button
               type="button"
               onClick={onReturnToLanding}
-              className="min-h-10 rounded border border-copper/25 px-3 py-1.5 text-[11px] uppercase tracking-[0.14em] text-copperSoft transition-colors hover:border-copper/45 hover:text-copper"
+              className="min-h-10 rounded border border-copper/30 bg-[#0a0907]/72 px-3 py-1.5 text-[11px] uppercase tracking-[0.14em] text-copperSoft transition-colors hover:border-copper/45 hover:text-copper"
             >
               Return to landing
             </button>
@@ -150,7 +150,7 @@ export function HeroIntroCard({
               <button
                 type="button"
                 onClick={onEnterArchive}
-                className="min-h-10 rounded border border-copper/35 bg-copper/10 px-3 py-1.5 text-[11px] uppercase tracking-[0.14em] text-copper transition-colors hover:border-copper hover:bg-copper/15"
+                className="min-h-10 rounded border border-copper/35 bg-copper/14 px-3 py-1.5 text-[11px] uppercase tracking-[0.14em] text-copper transition-colors hover:border-copper hover:bg-copper/18"
               >
                 Enter archive
               </button>

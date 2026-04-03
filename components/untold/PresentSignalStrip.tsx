@@ -175,8 +175,9 @@ export function PresentSignalStrip({ active, mobileBottomOffset, onMobileClose }
         className="pointer-events-auto absolute left-3 right-3 z-20 rounded border border-copper/25 bg-bg/88 p-3 backdrop-blur-sm md:hidden"
         style={{ bottom: `calc(env(safe-area-inset-bottom, 0px) + ${mobileBottomOffset}px)` }}
       >
+        <SignalBody data={data} loading={loading} />
         {onMobileClose && (
-          <div className="mb-3 flex items-center justify-end">
+          <div className="mt-3 flex items-center justify-end">
             <button
               type="button"
               onClick={onMobileClose}
@@ -186,7 +187,6 @@ export function PresentSignalStrip({ active, mobileBottomOffset, onMobileClose }
             </button>
           </div>
         )}
-        <SignalBody data={data} loading={loading} />
       </aside>
     </>
   );
