@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { EntryRoutes } from "@/components/untold/EntryRoutes";
 import { ProgressPassport } from "@/components/untold/ProgressPassport";
 import { WhyThisSignal } from "@/components/untold/WhyThisSignal";
@@ -46,6 +46,16 @@ export function HeroIntroCard({
   onEnterArchive,
   timeControls,
 }: HeroIntroCardProps) {
+  const [showOverview, setShowOverview] = useState(false);
+
+  useEffect(() => {
+    if (mode === "living") {
+      setShowOverview(true);
+      return;
+    }
+    setShowOverview(false);
+  }, [mode]);
+
   if (condensed && mode === "living") {
     return (
       <div className="museum-card pointer-events-auto w-full max-w-[min(94vw,430px)] overflow-hidden rounded border border-copper/25 bg-bg/72 backdrop-blur-sm md:w-auto md:max-w-none">
@@ -127,33 +137,60 @@ export function HeroIntroCard({
       </div>
 
       <div className="border-t border-copper/20 px-4 py-4">
-        <ProgressPassport
-          mode={mode}
-          visitedGalleries={visitedGalleries}
-          totalGalleries={totalGalleries}
-          lastViewedLiveStateAt={lastViewedLiveStateAt}
-          archiveUnlocked={archiveUnlocked}
-        />
-      </div>
-
-      <div className="border-t border-copper/20 px-4 py-4">
         <EntryRoutes
           items={ENTRY_ROUTE_ITEMS}
           activeRoute={activeRoute}
           lastEntryRoute={lastEntryRoute}
           onSelect={onEntryRouteSelect}
+          supplementalLinks={[
+            {
+              id: "discover-zambia",
+              label: "Discover Zambia",
+              description: "Open the curated places route: falls, wetlands, caves, ceremonies, and landmarks.",
+              href: "/discover",
+            },
+          ]}
         />
       </div>
 
-      {mode === "living" && (
+      <div className="border-t border-copper/20 px-4 py-3">
+        <button
+          type="button"
+          onClick={() => setShowOverview((prev) => !prev)}
+          className="flex min-h-10 w-full items-center justify-between rounded border border-copper/15 bg-bg/30 px-3 py-2 text-left transition-colors hover:border-copper/30 hover:bg-copper/6"
+        >
+          <span className="font-display text-[11px] uppercase tracking-[0.18em] text-copperSoft/85">
+            {showOverview ? "Hide Overview" : "Show Overview"}
+          </span>
+          <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-muted/75">
+            {showOverview ? "Collapse" : "Expand"}
+          </span>
+        </button>
+      </div>
+
+      {showOverview && (
+        <div className="border-t border-copper/20 px-4 py-4">
+          <ProgressPassport
+            mode={mode}
+            visitedGalleries={visitedGalleries}
+            totalGalleries={totalGalleries}
+            lastViewedLiveStateAt={lastViewedLiveStateAt}
+            archiveUnlocked={archiveUnlocked}
+          />
+        </div>
+      )}
+
+      {showOverview && mode === "living" && (
         <div className="border-t border-copper/20 px-4 py-4">
           <WhyThisSignal open={showWhyThisSignal} onToggle={onToggleWhyThisSignal} />
         </div>
       )}
 
-      <div className="border-t border-copper/20 px-4 py-3">
-        {timeControls}
-      </div>
+      {showOverview && (
+        <div className="border-t border-copper/20 px-4 py-3">
+          {timeControls}
+        </div>
+      )}
     </div>
   );
 }

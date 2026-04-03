@@ -1,12 +1,21 @@
 "use client";
 
+import Link from "next/link";
 import type { EntryRoute, EntryRouteItem } from "@/lib/untold/entry-routes";
+
+type EntryRoutesLink = {
+  id: string;
+  label: string;
+  description: string;
+  href: string;
+};
 
 type EntryRoutesProps = {
   items: EntryRouteItem[];
   activeRoute: EntryRoute;
   lastEntryRoute?: EntryRoute;
   onSelect: (route: EntryRoute) => void;
+  supplementalLinks?: EntryRoutesLink[];
 };
 
 export function EntryRoutes({
@@ -14,6 +23,7 @@ export function EntryRoutes({
   activeRoute,
   lastEntryRoute,
   onSelect,
+  supplementalLinks = [],
 }: EntryRoutesProps) {
   return (
     <div className="space-y-2">
@@ -58,6 +68,25 @@ export function EntryRoutes({
             </button>
           );
         })}
+        {supplementalLinks.map((item) => (
+          <Link
+            key={item.id}
+            href={item.href}
+            className="block min-h-14 rounded border border-[#76d7ff]/25 bg-[#76d7ff]/[0.06] px-3.5 py-3 text-left transition-colors hover:border-[#76d7ff]/40 hover:bg-[#76d7ff]/[0.1]"
+          >
+            <div className="flex items-start justify-between gap-2">
+              <p className="text-[12px] uppercase tracking-[0.14em] text-[#c4f2ff] md:text-[13px]">
+                {item.label}
+              </p>
+              <span className="rounded border border-[#76d7ff]/20 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-[#9fe7ff]">
+                Route
+              </span>
+            </div>
+            <p className="mt-1.5 text-[12px] leading-relaxed text-[#b7dce4] md:text-[13px]">
+              {item.description}
+            </p>
+          </Link>
+        ))}
       </div>
     </div>
   );

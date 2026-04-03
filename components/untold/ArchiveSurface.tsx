@@ -151,6 +151,27 @@ export function ArchiveSurface() {
     };
   }, []);
 
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtmlOverflowY = html.style.overflowY;
+    const prevBodyOverflowY = body.style.overflowY;
+    const prevHtmlHeight = html.style.height;
+    const prevBodyHeight = body.style.height;
+
+    html.style.overflowY = "auto";
+    body.style.overflowY = "auto";
+    html.style.height = "auto";
+    body.style.height = "auto";
+
+    return () => {
+      html.style.overflowY = prevHtmlOverflowY;
+      body.style.overflowY = prevBodyOverflowY;
+      html.style.height = prevHtmlHeight;
+      body.style.height = prevBodyHeight;
+    };
+  }, []);
+
   const provinceOptions = useMemo(
     () =>
       Array.from(
