@@ -290,3 +290,40 @@ Use this file as a lightweight continuity layer to reduce regressions across par
 - Follow-ups:
   - Add homepage handling for `/?fly=lat,lng`
   - Replace fallback imagery for Mwela and Nachikufu if direct Commons files are sourced
+
+## 2026-04-03 - Fly Handler + Present Layer + Stretch Routes
+
+- Date: 2026-04-03
+- Area: Discover-to-globe handoff, Sprint 0.5 present-state integration, stretch route expansion
+- Intent: Close the `/discover` to globe loop, wire real zambiamacro context into Living Zambia, then use remaining time on unblocked route additions.
+- Invariants touched:
+  - Globe render path preserved; fly-to uses the existing coordinate animation state
+  - Present layer added as a compact contextual strip, not a competing analytics console
+  - No new Supabase tables or untold backend mutations introduced
+- Files changed:
+  - `app/page.tsx`
+  - `lib/untold/present-state.ts`
+  - `app/api/zambia-macro/state/route.ts`
+  - `components/untold/PresentSignalStrip.tsx`
+  - `data/discoverPlaces.ts`
+  - `components/untold/FutureSurface.tsx`
+  - `app/future/page.tsx`
+  - `components/untold/HeroIntroCard.tsx`
+- Risk:
+  - `/?fly=lat,lng` is verified at the route/status level; the visual camera confirmation still deserves a browser pass when a human is back at the controls
+  - zambiamacro public views are live and returning data, but the FX direction remains `unknown` when only one public rate row is available
+  - `/future` is intentionally skeletal and should not be treated as a doctrinally complete Future layer
+- Regression checks run:
+  - `npm run typecheck` pass
+  - `GET /api/zambia-macro/state` pass (`sourceStatus: live`)
+  - `GET /?fly=-15.5,29.2` pass
+  - `GET /future` pass
+- Blockers:
+  - Lint remains blocked by Windows file locking on `.next/cache`:
+    - `Remove-Item .next/cache -Recurse -Force` failed with `Access is denied`
+    - `npx next lint --no-cache` failed with `EPERM ... .next\\cache\\eslint\\.cache_1knlotr`
+  - Per `CODEX_5DAY_BRIEF.md`, stopped after the two prescribed attempts and moved on
+- Follow-ups:
+  - Run a visual browser check for the `/?fly=lat,lng` camera handoff
+  - Re-run lint once the local dev process releases `.next/cache`
+  - Replace representative cave-art imagery for Mwela and Nachikufu if direct Commons files are confirmed

@@ -322,6 +322,84 @@ export const DISCOVER_PLACES: DiscoverPlace[] = [
     ],
     featured: false,
   },
+  {
+    id: "lower-zambezi-national-park",
+    slug: "lower-zambezi-national-park",
+    name: "Lower Zambezi National Park",
+    province: "Lusaka",
+    categories: ["nature"],
+    coordinates: { lat: -15.5, lng: 29.2 },
+    heroImage: commonsFileUrl("Elephants crossing the Lower Zambezi.jpg"),
+    thumbnailImage: commonsFileUrl("Elephants crossing the Lower Zambezi.jpg"),
+    imageAlt: "Elephants crossing the Lower Zambezi in Zambia.",
+    shortDescription:
+      "A floodplain wilderness where the Zambezi defines the southern boundary and elephant corridors follow the water.",
+    contextNote:
+      "Lower Zambezi belongs in this route because it shows Zambia as river country: wildlife, escarpment, floodplain, and border all organized by one moving system.",
+    whyItMatters:
+      "It gives the Discover layer another place where ecology and national imagination meet without flattening the country into one famous landmark.",
+    sourceNote: "Wikimedia Commons image of elephants crossing the Lower Zambezi.",
+    links: [
+      {
+        label: "Image source",
+        href: commonsFilePageUrl("Elephants crossing the Lower Zambezi.jpg"),
+        kind: "reference",
+      },
+    ],
+    featured: true,
+  },
+  {
+    id: "kafue-flats",
+    slug: "kafue-flats",
+    name: "Kafue Flats",
+    province: "Southern",
+    categories: ["nature", "cultural"],
+    coordinates: { lat: -15.8, lng: 27.0 },
+    heroImage: commonsFileUrl("Kafue Flats, Zambia (MODIS 2021-04-05).jpg"),
+    thumbnailImage: commonsFileUrl("Kafue Flats, Zambia (MODIS 2021-04-05).jpg"),
+    imageAlt: "Satellite view of the Kafue Flats in Zambia.",
+    shortDescription:
+      "One of Africa's largest floodplains, shaped by the Kafue River's seasonal pulse and the lives of fishing communities who read its rhythms.",
+    contextNote:
+      "The Kafue Flats are best understood as a living pattern rather than a point on a map: water spread, grazing ground, fisheries, migration, and the knowledge required to stay in step with them.",
+    whyItMatters:
+      "It expands Discover Zambia beyond scenic overlooks and into a place where hydrology, livelihood, and collective timing are inseparable.",
+    sourceNote: "Wikimedia Commons MODIS image showing the scale of the Kafue Flats floodplain.",
+    links: [
+      {
+        label: "Image source",
+        href: commonsFilePageUrl("Kafue Flats, Zambia (MODIS 2021-04-05).jpg"),
+        kind: "reference",
+      },
+    ],
+    featured: true,
+  },
+  {
+    id: "shiwa-ngandu",
+    slug: "shiwa-ngandu",
+    name: "Shiwa Ng'andu",
+    province: "Muchinga",
+    categories: ["heritage", "cultural"],
+    coordinates: { lat: -11.2, lng: 31.73 },
+    heroImage: commonsFileUrl("HouseatShiwaNgandu.jpg"),
+    thumbnailImage: commonsFileUrl("HouseatShiwaNgandu.jpg"),
+    imageAlt: "The main house on the Shiwa Ng'andu estate in Zambia.",
+    shortDescription:
+      "An English manor house built in the Zambian bush in the 1920s, a strange colonial artifact now part of the country's texture.",
+    contextNote:
+      "Shiwa Ng'andu is not here because it is simple to admire. It is here because Zambia also contains inherited forms that do not fit cleanly, and understanding the country means facing them directly.",
+    whyItMatters:
+      "It gives the route an honest colonial layer: not a monument of pride, but a place whose persistence says something about how history settles into landscape.",
+    sourceNote: "Wikimedia Commons image of the main house on the Shiwa Ng'andu estate.",
+    links: [
+      {
+        label: "Image source",
+        href: commonsFilePageUrl("HouseatShiwaNgandu.jpg"),
+        kind: "reference",
+      },
+    ],
+    featured: false,
+  },
 ];
 
 export const DISCOVER_CATEGORY_LABELS: Record<DiscoverCategory, string> = {

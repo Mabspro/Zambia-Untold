@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { CanvasWrapper } from "@/components/Layout/CanvasWrapper";
@@ -26,6 +26,7 @@ import { MissionPanel } from "@/components/UI/MissionPanel";
 import { MissionBadgeOverlay } from "@/components/UI/MissionBadgeOverlay";
 import { ContextRail } from "@/components/untold/ContextRail";
 import { HeroIntroCard } from "@/components/untold/HeroIntroCard";
+import { PresentSignalStrip } from "@/components/untold/PresentSignalStrip";
 import { MARKERS } from "@/data/markers";
 import { MISSIONS } from "@/lib/missions";
 import { emitMissionEvent, onMissionEvent } from "@/lib/missionEvents";
@@ -95,6 +96,7 @@ type ActivePanel =
 
 export default function HomePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
   const [scrubYear, setScrubYear] = useState<number>(DEEP_TIME_MAX);
   const [layerVisibility, setLayerVisibility] = useState<LayerVisibility>(DEFAULT_LAYERS);
@@ -134,9 +136,18 @@ export default function HomePage() {
   const missionCopperEpochEmittedRef = useRef(false);
   const prevLayerRef = useRef<LayerVisibility>(DEFAULT_LAYERS);
   const prevPanelRef = useRef<ActivePanel>(null);
+  const handledFlyQueryRef = useRef<string | null>(null);
   const safe = useViewportSafeLayout();
   const archiveUnlocked = visitedZones.length > 0 || activePanel === "contribute" || layerVisibility.community !== false;
   const prevObservatoryActiveRef = useRef(false);
+
+  const triggerFlyToCoordinate = useCallback((lat: number, lng: number, placeName?: string) => {
+    setFlyToCoordinate({ lat, lng });
+    if (placeName) {
+      setFlyToPin({ lat, lng, placeName });
+    }
+    setTimeout(() => setFlyToCoordinate(null), 100);
+  }, []);
 
   const updateReturningHints = useCallback((next: Partial<ReturningUserHints>) => {
     const merged = mergeReturningUserHints(next);
@@ -145,9 +156,8 @@ export default function HomePage() {
   }, []);
 
   const focusLiveZambia = useCallback(() => {
-    setFlyToCoordinate(ZAMBIA_LIVE_FOCUS);
-    setTimeout(() => setFlyToCoordinate(null), 100);
-  }, []);
+    triggerFlyToCoordinate(ZAMBIA_LIVE_FOCUS.lat, ZAMBIA_LIVE_FOCUS.lng);
+  }, [triggerFlyToCoordinate]);
 
   /**
    * openPanel — enforces one-panel-at-a-time rule at the state level.
@@ -387,6 +397,47 @@ export default function HomePage() {
   }, [selectedMarkerId, activePanel]);
 
   useEffect(() => {
+    const flyParam = searchParams.get("fly");
+    if (!didBootRef.current || !flyParam) return;
+    if (handledFlyQueryRef.current === flyParam) return;
+
+    const [latRaw, lngRaw] = flyParam.split(",");
+    const lat = Number(latRaw);
+    const lng = Number(lngRaw);
+
+    handledFlyQueryRef.current = flyParam;
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      router.replace("/", { scroll: false });
+      return;
+    }
+
+    clearLobbyTimers();
+    updateReturningHints({ dismissedIntro: true });
+    if (typeof window !== "undefined") {
+      window.sessionStorage.setItem(LOBBY_STORAGE_KEY, "1");
+      window.sessionStorage.setItem(TOUR_STORAGE_KEY, "1");
+    }
+
+    setLobbyPhase("done");
+    setGuidedTourCompleted(true);
+    setShowGuidedTour(false);
+    setSelectedMarkerId(null);
+    setContextualCardDismissed(true);
+    setShowNkolosoCinematic(false);
+    setActivePanel(null);
+    setReentryZone(null);
+    setShowWhyThisSignal(false);
+    setHeroExpanded(true);
+    triggerFlyToCoordinate(lat, lng);
+
+    const replaceId = setTimeout(() => {
+      router.replace("/", { scroll: false });
+    }, 160);
+    return () => clearTimeout(replaceId);
+  }, [clearLobbyTimers, router, searchParams, triggerFlyToCoordinate, updateReturningHints]);
+
+  useEffect(() => {
     if (lobbyPhase !== "globe") return;
 
     const t = setTimeout(() => setLobbyPhase("thesis"), 2600);
@@ -555,11 +606,7 @@ export default function HomePage() {
       }
     }
     // Fly to arbitrary coordinate (Village Search)
-    setFlyToCoordinate({ lat, lng });
-    // Drop a confirmation pin at the destination
-    setFlyToPin({ lat, lng, placeName });
-    // Reset flyToCoordinate after a tick so the same coordinate can be re-selected
-    setTimeout(() => setFlyToCoordinate(null), 100);
+    triggerFlyToCoordinate(lat, lng, placeName);
     setActivePanel(null);
     setShowNkolosoCinematic(false);
   };
@@ -989,6 +1036,13 @@ export default function HomePage() {
           onEnterArchive={() => handleEntryRouteSelect("archive")}
           onOpenMissionBuilder={() => openPanel("spaceMission")}
           guidedTourActive={showGuidedTour}
+        />
+      )}
+
+      {showUI && currentMode === "living" && !hideMobileAuxOverlays && (
+        <PresentSignalStrip
+          active
+          mobileBottomOffset={mobileBottomInsetPx + 108}
         />
       )}
 

@@ -149,6 +149,12 @@ export function HeroIntroCard({
               description: "Open the curated places route: falls, wetlands, caves, ceremonies, and landmarks.",
               href: "/discover",
             },
+            {
+              id: "future-zambia",
+              label: "Future Zambia",
+              description: "Preview the technology layer: sovereign compute, native data, and local AI possibility.",
+              href: "/future",
+            },
           ]}
         />
       </div>
