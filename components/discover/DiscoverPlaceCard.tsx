@@ -32,7 +32,7 @@ export function DiscoverPlaceCard({ place, selected, onSelect }: DiscoverPlaceCa
       }`}
     >
       <button type="button" onClick={onSelect} className="block w-full text-left">
-        <div className="relative h-56 w-full overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(184,115,51,0.18),_transparent_48%),linear-gradient(180deg,_#15110d,_#090806)]">
+        <div className="relative h-48 w-full overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(184,115,51,0.18),_transparent_48%),linear-gradient(180deg,_#15110d,_#090806)] md:h-56">
           {place.heroImage && !imageError ? (
             <Image
               src={place.heroImage}
@@ -72,7 +72,7 @@ export function DiscoverPlaceCard({ place, selected, onSelect }: DiscoverPlaceCa
         </div>
       </button>
 
-      <div className="px-4 py-4">
+      <div className="px-4 py-3 md:py-4">
         <div className="flex flex-wrap gap-2">
           <span className="rounded border border-copper/18 bg-copper/6 px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-copperSoft">
             {place.province}
@@ -87,7 +87,7 @@ export function DiscoverPlaceCard({ place, selected, onSelect }: DiscoverPlaceCa
           ))}
         </div>
 
-        <p className="mt-3 text-[14px] leading-7 text-[#d8c9b4]">{place.shortDescription}</p>
+        <p className="mt-3 text-[14px] leading-6 text-[#d8c9b4] md:leading-7">{place.shortDescription}</p>
 
         <div className="mt-4 flex flex-wrap gap-2">
           <FlyLink place={place} />

@@ -163,12 +163,16 @@ export function ArchiveSurface() {
     body.style.overflowY = "auto";
     html.style.height = "auto";
     body.style.height = "auto";
+    html.classList.add("route-scroll-mode");
+    body.classList.add("route-scroll-mode");
 
     return () => {
       html.style.overflowY = prevHtmlOverflowY;
       body.style.overflowY = prevBodyOverflowY;
       html.style.height = prevHtmlHeight;
       body.style.height = prevBodyHeight;
+      html.classList.remove("route-scroll-mode");
+      body.classList.remove("route-scroll-mode");
     };
   }, []);
 
@@ -246,12 +250,12 @@ export function ArchiveSurface() {
 
   return (
     <>
-      <main className="relative isolate min-h-screen bg-[#050608] text-[#eadbc4]">
+      <main className="route-scroll-surface relative isolate min-h-screen bg-[#050608] text-[#eadbc4]">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(184,115,51,0.12),_transparent_38%),linear-gradient(180deg,_rgba(6,7,9,0.92),_rgba(3,4,6,0.98))]" />
-        <div className="relative mx-auto max-w-7xl px-5 py-8 md:px-8 md:py-10">
-          <div className="flex flex-col gap-8">
-            <header className="rounded border border-copper/25 bg-[#0b0907]/82 px-5 py-5 backdrop-blur-md md:px-7 md:py-6">
-              <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+        <div className="relative mx-auto max-w-7xl px-4 py-5 md:px-8 md:py-10">
+          <div className="flex flex-col gap-5 md:gap-8">
+            <header className="rounded border border-copper/25 bg-[#0b0907]/82 px-4 py-4 backdrop-blur-md md:px-7 md:py-6">
+              <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                 <div className="max-w-3xl">
                   <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-copperSoft/80">
                     Isibalo Archive

@@ -50,6 +50,24 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+html.route-scroll-mode,
+body.route-scroll-mode {
+  height: auto;
+  overflow-y: auto;
+  overscroll-behavior-y: auto;
+}
+
+body.route-scroll-mode::before,
+body.route-scroll-mode::after {
+  display: none;
+}
+
+.route-scroll-surface {
+  touch-action: pan-y;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
 body {
   font-family: var(--font-body);
   color: #f0e6d3;
@@ -346,6 +364,10 @@ canvas {
   /* Safe area padding for bottom action bar (notch phones) */
   nav {
     padding-bottom: max(0.625rem, env(safe-area-inset-bottom));
+  }
+
+  .route-scroll-surface {
+    padding-bottom: max(2.5rem, calc(env(safe-area-inset-bottom) + 1.25rem));
   }
 }
 

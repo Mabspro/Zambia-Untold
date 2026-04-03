@@ -49,12 +49,16 @@ export function DiscoverSurface() {
     body.style.overflowY = "auto";
     html.style.height = "auto";
     body.style.height = "auto";
+    html.classList.add("route-scroll-mode");
+    body.classList.add("route-scroll-mode");
 
     return () => {
       html.style.overflowY = prevHtmlOverflowY;
       body.style.overflowY = prevBodyOverflowY;
       html.style.height = prevHtmlHeight;
       body.style.height = prevBodyHeight;
+      html.classList.remove("route-scroll-mode");
+      body.classList.remove("route-scroll-mode");
     };
   }, []);
 
@@ -72,10 +76,10 @@ export function DiscoverSurface() {
   const selectedPlace = getSelectedPlace(filteredPlaces, selectedId);
 
   return (
-    <main className="relative isolate min-h-screen bg-[#050608] text-[#eadbc4]">
+    <main className="route-scroll-surface relative isolate min-h-screen bg-[#050608] text-[#eadbc4]">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(184,115,51,0.12),_transparent_38%),linear-gradient(180deg,_rgba(6,7,9,0.92),_rgba(3,4,6,0.98))]" />
-      <div className="relative mx-auto max-w-7xl px-5 py-8 md:px-8 md:py-10">
-        <div className="flex flex-col gap-8">
+      <div className="relative mx-auto max-w-7xl px-4 py-5 md:px-8 md:py-10">
+        <div className="flex flex-col gap-5 md:gap-8">
           <DiscoverHero
             totalPlaces={DISCOVER_PLACES.length}
             featuredPlaces={DISCOVER_PLACES.filter((place) => place.featured).length}
@@ -91,7 +95,7 @@ export function DiscoverSurface() {
             onFeaturedOnlyChange={setFeaturedOnly}
           />
 
-          <section className="rounded border border-copper/22 bg-[#0b0907]/76 px-5 py-5 backdrop-blur-sm md:px-7 md:py-6">
+          <section className="rounded border border-copper/22 bg-[#0b0907]/76 px-4 py-4 backdrop-blur-sm md:px-7 md:py-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
                 <p className="font-display text-[12px] uppercase tracking-[0.22em] text-copperSoft">
@@ -102,7 +106,7 @@ export function DiscoverSurface() {
                   memory, ceremony, ecology, geology, trade, or inherited design language.
                 </p>
               </div>
-              <div className="rounded border border-copper/14 bg-black/15 px-4 py-3">
+              <div className="hidden rounded border border-copper/14 bg-black/15 px-4 py-3 md:block">
                 <p className="text-[11px] uppercase tracking-[0.16em] text-copperSoft">Visible places</p>
                 <p className="mt-2 font-display text-3xl text-[#f0dfc3]">{filteredPlaces.length}</p>
               </div>
@@ -117,7 +121,7 @@ export function DiscoverSurface() {
               </div>
             ) : (
               <>
-                <div className="mt-6">
+                <div className="mt-5 md:mt-6">
                   <DiscoverPlaceGrid
                     places={filteredPlaces}
                     selectedId={selectedId}
@@ -126,7 +130,7 @@ export function DiscoverSurface() {
                 </div>
 
                 {selectedPlace ? (
-                  <div className="mt-8 rounded border border-copper/20 bg-black/15 px-5 py-5">
+                  <div className="mt-5 rounded border border-copper/20 bg-black/15 px-4 py-4 md:mt-8 md:px-5 md:py-5">
                     <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                       <div className="max-w-3xl">
                         <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-copperSoft/80">

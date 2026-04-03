@@ -24,7 +24,7 @@ export function DiscoverFilters({
   const categories = Object.entries(DISCOVER_CATEGORY_LABELS) as Array<[DiscoverCategory, string]>;
 
   return (
-    <section className="rounded border border-copper/22 bg-[#0b0907]/76 px-5 py-5 backdrop-blur-sm md:px-7 md:py-6">
+    <section className="rounded border border-copper/22 bg-[#0b0907]/76 px-4 py-4 backdrop-blur-sm md:px-7 md:py-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="font-display text-[12px] uppercase tracking-[0.22em] text-copperSoft">
@@ -34,7 +34,7 @@ export function DiscoverFilters({
             Move through provinces and categories without flattening the places into a single tourism list.
           </p>
         </div>
-        <label className="inline-flex items-center gap-3 rounded border border-copper/20 px-4 py-2">
+        <label className="inline-flex items-center gap-3 self-start rounded border border-copper/20 px-3 py-2 md:px-4">
           <input
             type="checkbox"
             checked={featuredOnly}
@@ -45,7 +45,7 @@ export function DiscoverFilters({
         </label>
       </div>
 
-      <div className="mt-6 grid gap-3 md:grid-cols-[minmax(0,260px)_1fr]">
+      <div className="mt-5 grid gap-3 md:mt-6 md:grid-cols-[minmax(0,260px)_1fr]">
         <label className="block">
           <span className="mb-2 block text-[11px] uppercase tracking-[0.16em] text-copperSoft">
             Province

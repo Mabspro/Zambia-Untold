@@ -7,22 +7,22 @@ type DiscoverHeroProps = {
 
 export function DiscoverHero({ totalPlaces, featuredPlaces }: DiscoverHeroProps) {
   return (
-    <header className="rounded border border-copper/25 bg-[#0b0907]/84 px-5 py-5 backdrop-blur-md md:px-7 md:py-6">
-      <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+    <header className="rounded border border-copper/25 bg-[#0b0907]/84 px-4 py-4 backdrop-blur-md md:px-7 md:py-6">
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="max-w-3xl">
           <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-copperSoft/80">
             Discover Zambia
           </p>
-          <h1 className="mt-2 font-display text-4xl tracking-[0.16em] text-copper md:text-5xl">
+          <h1 className="mt-2 font-display text-[2.35rem] leading-none tracking-[0.12em] text-copper md:text-5xl md:tracking-[0.16em]">
             Places With Depth
           </h1>
-          <p className="mt-4 max-w-2xl text-[15px] leading-7 text-[#d8c9b4] md:text-[17px]">
+          <p className="mt-3 max-w-2xl text-[14px] leading-7 text-[#d8c9b4] md:mt-4 md:text-[17px]">
             Curated places across Zambia: sacred landscapes, wetlands, caves, ceremonies, falls,
             trade sites, and parks that carry more than scenery. This route is about encounter, not
             itinerary.
           </p>
         </div>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-2 md:gap-3">
           <Link
             href="/"
             className="min-h-11 rounded border border-copper/30 px-4 py-2 text-[12px] uppercase tracking-[0.14em] text-copperSoft transition-colors hover:border-copper hover:text-copper"
@@ -38,7 +38,18 @@ export function DiscoverHero({ totalPlaces, featuredPlaces }: DiscoverHeroProps)
         </div>
       </div>
 
-      <div className="mt-5 grid gap-3 md:grid-cols-3">
+      <div className="mt-4 flex flex-wrap gap-2 md:hidden">
+        <div className="rounded border border-copper/18 bg-black/20 px-3 py-2">
+          <p className="text-[10px] uppercase tracking-[0.16em] text-copper/75">Places</p>
+          <p className="mt-1 font-display text-2xl text-[#f0dfc3]">{totalPlaces}</p>
+        </div>
+        <div className="rounded border border-copper/18 bg-black/20 px-3 py-2">
+          <p className="text-[10px] uppercase tracking-[0.16em] text-copper/75">Featured</p>
+          <p className="mt-1 font-display text-2xl text-[#f0dfc3]">{featuredPlaces}</p>
+        </div>
+      </div>
+
+      <div className="mt-5 hidden gap-3 md:grid md:grid-cols-3">
         <div className="rounded border border-copper/18 bg-black/20 px-4 py-3">
           <p className="text-[11px] uppercase tracking-[0.16em] text-copper/75">Curated Places</p>
           <p className="mt-2 font-display text-3xl text-[#f0dfc3]">{totalPlaces}</p>
