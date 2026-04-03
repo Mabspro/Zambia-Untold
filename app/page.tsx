@@ -159,6 +159,11 @@ function HomePageContent() {
     return merged;
   }, []);
 
+  const refreshExperience = useCallback(() => {
+    if (typeof window === "undefined") return;
+    window.location.reload();
+  }, []);
+
   const restoreMobileChrome = useCallback(() => {
     setMobileLayersVisible(true);
     setMobileMissionVisible(true);
@@ -900,6 +905,20 @@ function HomePageContent() {
         >
           <button
             type="button"
+            onClick={refreshExperience}
+            className="flex min-h-11 min-w-11 items-center justify-center rounded border border-copper/35 bg-bg/75 px-2 text-copperSoft backdrop-blur-sm hover:border-copper"
+            aria-label="Refresh experience"
+            title="Refresh experience"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M21 2v6h-6" />
+              <path d="M3 12a9 9 0 0 1 15.5-6.36L21 8" />
+              <path d="M3 22v-6h6" />
+              <path d="M21 12a9 9 0 0 1-15.5 6.36L3 16" />
+            </svg>
+          </button>
+          <button
+            type="button"
             onClick={() => setShowSettings((v) => !v)}
             className="flex min-h-11 min-w-11 items-center justify-center rounded border border-copper/35 bg-bg/75 px-2 text-copperSoft backdrop-blur-sm hover:border-copper"
             aria-label="Settings"
@@ -1159,33 +1178,33 @@ function HomePageContent() {
         const reopenChips: Array<{ id: string; label: string; onClick: () => void }> = [];
 
         if (!mobileLayersVisible) {
-          reopenChips.push({ id: "layers", label: "Map Layers", onClick: () => setMobileLayersVisible(true) });
+          reopenChips.push({ id: "layers", label: "Layers", onClick: () => setMobileLayersVisible(true) });
         }
         if (!mobileMissionVisible && !observatoryActive && !mobileLandingScrollActive) {
           reopenChips.push({ id: "mission", label: "Mission", onClick: () => setMobileMissionVisible(true) });
         }
         if (!mobileSpaceSignalVisible && observatoryActive) {
-          reopenChips.push({ id: "space", label: "Space Signal", onClick: () => setMobileSpaceSignalVisible(true) });
+          reopenChips.push({ id: "space", label: "Space", onClick: () => setMobileSpaceSignalVisible(true) });
         }
         if (!mobilePresentSignalVisible && currentMode === "living" && !hideMobileAuxOverlays) {
-          reopenChips.push({ id: "present", label: "Present Signal", onClick: () => setMobilePresentSignalVisible(true) });
+          reopenChips.push({ id: "present", label: "Present", onClick: () => setMobilePresentSignalVisible(true) });
         }
 
         if (reopenChips.length === 0) return null;
 
         return (
           <div
-            className="pointer-events-auto absolute left-3 right-3 z-30 flex gap-2 overflow-x-auto pb-1 md:hidden"
-            style={{ bottom: `calc(env(safe-area-inset-bottom, 0px) + ${mobileBottomInsetPx + 62}px)` }}
+            className="pointer-events-auto absolute left-3 right-3 z-30 flex flex-wrap gap-2 md:hidden"
+            style={{ top: headerBottom + 10 }}
           >
             {reopenChips.map((chip) => (
               <button
                 key={chip.id}
                 type="button"
                 onClick={chip.onClick}
-                className="shrink-0 rounded border border-copper/25 bg-bg/88 px-3 py-2 text-[11px] uppercase tracking-[0.14em] text-copperSoft backdrop-blur-sm"
+                className="rounded border border-copper/25 bg-bg/88 px-3 py-2 text-[11px] uppercase tracking-[0.14em] text-copperSoft backdrop-blur-sm"
               >
-                Show {chip.label}
+                Open {chip.label}
               </button>
             ))}
           </div>
