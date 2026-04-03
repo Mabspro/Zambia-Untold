@@ -311,6 +311,8 @@ function HomePageContent() {
       if (!safe.isDesktop) {
         setMobileLayersVisible(false);
         setMobileMissionVisible(false);
+        setMobileSpaceSignalVisible(false);
+        setMobilePresentSignalVisible(false);
       }
       setLayerVisibility((prev) => ({
         ...prev,

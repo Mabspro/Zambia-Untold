@@ -319,7 +319,7 @@ export function SpaceSignal({
                   <button
                     type="button"
                     onClick={onMobileClose}
-                    className="min-h-10 rounded border border-copper/20 px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] text-muted/80"
+                    className="min-h-10 rounded border border-[#cf5b5b]/35 bg-[#cf5b5b]/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] text-[#ffc1c1]"
                   >
                     Close
                   </button>
@@ -345,7 +345,7 @@ export function SpaceSignal({
                     <button
                       type="button"
                       onClick={onMobileClose}
-                      className="min-h-10 rounded border border-copper/20 px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] text-muted/80"
+                      className="min-h-10 rounded border border-[#cf5b5b]/35 bg-[#cf5b5b]/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] text-[#ffc1c1]"
                     >
                       Hide
                     </button>
@@ -353,7 +353,7 @@ export function SpaceSignal({
                   <button
                     type="button"
                     onClick={() => setMobileExpanded(false)}
-                    className="min-h-11 rounded border border-copper/25 px-3 py-1.5 text-[12px] uppercase tracking-[0.12em] text-muted/80"
+                    className="min-h-11 rounded border border-[#cf5b5b]/35 bg-[#cf5b5b]/10 px-3 py-1.5 text-[12px] uppercase tracking-[0.12em] text-[#ffc1c1]"
                   >
                     Close
                   </button>

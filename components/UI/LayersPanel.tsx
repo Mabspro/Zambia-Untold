@@ -122,7 +122,7 @@ export function LayersPanel({
           <button
             type="button"
             onClick={onCloseMobile}
-            className="mr-2 flex min-h-10 min-w-10 items-center justify-center rounded border border-copper/20 px-2 text-[12px] uppercase tracking-[0.12em] text-muted/80 transition-colors hover:border-copper/35 hover:text-copper md:hidden"
+            className="mr-2 flex min-h-10 min-w-10 items-center justify-center rounded border border-[#cf5b5b]/35 bg-[#cf5b5b]/10 px-2 text-[12px] uppercase tracking-[0.12em] text-[#ffc1c1] transition-colors hover:border-[#e06d6d] hover:bg-[#cf5b5b]/16 hover:text-[#ffe0e0] md:hidden"
             aria-label="Hide map layers"
           >
             Close

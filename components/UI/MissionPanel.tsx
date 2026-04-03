@@ -141,7 +141,7 @@ export function MissionPanel({
                   <button
                     type="button"
                     onClick={onCloseMobile}
-                    className="min-h-10 rounded border border-copper/20 px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.12em] text-muted/80 hover:border-copper/35 hover:text-copper md:hidden"
+                    className="min-h-10 rounded border border-[#cf5b5b]/35 bg-[#cf5b5b]/10 px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.12em] text-[#ffc1c1] hover:border-[#e06d6d] hover:bg-[#cf5b5b]/16 hover:text-[#ffe0e0] md:hidden"
                     aria-label="Hide mission panel"
                   >
                     Close
@@ -164,7 +164,7 @@ export function MissionPanel({
                     <button
                       type="button"
                       onClick={onCloseMobile}
-                      className="min-h-10 border border-copper/20 px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.12em] text-muted/80 hover:border-copper/35 hover:text-copper md:hidden"
+                      className="min-h-10 border border-[#cf5b5b]/35 bg-[#cf5b5b]/10 px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.12em] text-[#ffc1c1] hover:border-[#e06d6d] hover:bg-[#cf5b5b]/16 hover:text-[#ffe0e0] md:hidden"
                       aria-label="Hide mission panel"
                     >
                       Close

@@ -180,7 +180,7 @@ export function PresentSignalStrip({ active, mobileBottomOffset, onMobileClose }
             <button
               type="button"
               onClick={onMobileClose}
-              className="min-h-10 rounded border border-copper/20 px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] text-muted/80 transition-colors hover:border-copper/35 hover:text-copper"
+              className="min-h-10 rounded border border-[#cf5b5b]/35 bg-[#cf5b5b]/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] text-[#ffc1c1] transition-colors hover:border-[#e06d6d] hover:bg-[#cf5b5b]/16 hover:text-[#ffe0e0]"
             >
               Close
             </button>
