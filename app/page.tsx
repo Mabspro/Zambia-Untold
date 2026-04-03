@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { CanvasWrapper } from "@/components/Layout/CanvasWrapper";
 import { NarrativePanel } from "@/components/UI/NarrativePanel";
@@ -94,7 +94,7 @@ type ActivePanel =
   | "villageSearch"
   | "spaceMission";
 
-export default function HomePage() {
+function HomePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
@@ -1214,6 +1214,21 @@ export default function HomePage() {
         Sovereign Infrastructure · Powered by CopperCloud · Zambia
       </p>
     </main>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense
+      fallback={
+        <main
+          className="relative isolate h-full min-h-screen w-full max-w-full overflow-x-hidden overflow-y-hidden"
+          style={{ backgroundColor: "#030405" }}
+        />
+      }
+    >
+      <HomePageContent />
+    </Suspense>
   );
 }
 
