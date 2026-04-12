@@ -55,42 +55,69 @@ export interface WorkloadResult {
   receipt_endpoint: string;
 }
 
-export async function submitWorkload(params: {
-  workloadType: string;
-  dataSensitivity: string;
-  jobName?: string;
-  ndaRequired?: boolean;
-  requestedResources?: Record<string, number>;
-}): Promise<WorkloadResult> {
-  const res = await fetch(`${ORCHESTRATOR_URL}/api/workload`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${SUBMIT_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      workload_type: params.workloadType,
-      data_sensitivity: params.dataSensitivity,
-      nda_required: params.ndaRequired ?? false,
-      tenant_id: TENANT_ID,
-      job_name: params.jobName,
-      requested_resources: params.requestedResources ?? {
-        cpu_cores: 1,
-        ram_gb: 1,
-        storage_gb: 1,
+/**
+ * Submit a workload to CopperCloud.
+ * failOpen=true (default): on any error, log and return null — caller continues.
+ * failOpen=false: throw on error — use only where a missing receipt is unacceptable.
+ */
+export async function submitWorkload(
+  params: {
+    workloadType: string;
+    dataSensitivity: string;
+    jobName?: string;
+    ndaRequired?: boolean;
+    requestedResources?: Record<string, number>;
+  },
+  failOpen = true
+): Promise<WorkloadResult | null> {
+  try {
+    const res = await fetch(`${ORCHESTRATOR_URL}/api/workload`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${SUBMIT_KEY}`,
+        "Content-Type": "application/json",
       },
-    }),
-  });
-  if (!res.ok) throw new Error(`CopperCloud submit failed: ${res.status}`);
-  return res.json();
+      body: JSON.stringify({
+        workload_type: params.workloadType,
+        data_sensitivity: params.dataSensitivity,
+        nda_required: params.ndaRequired ?? false,
+        tenant_id: TENANT_ID,
+        job_name: params.jobName,
+        requested_resources: params.requestedResources ?? {
+          cpu_cores: 1,
+          ram_gb: 1,
+          storage_gb: 1,
+        },
+      }),
+    });
+    if (!res.ok) throw new Error(`CopperCloud submit failed: ${res.status}`);
+    return res.json();
+  } catch (e) {
+    if (failOpen) {
+      console.warn("[coppercloud] workload submission failed (non-blocking):", e);
+      return null;
+    }
+    throw e;
+  }
 }
 
-export async function getReceipt(jobId: string): Promise<Record<string, unknown>> {
-  const res = await fetch(`${ORCHESTRATOR_URL}/api/jobs/${jobId}/receipt`, {
-    headers: { Authorization: `Bearer ${READ_KEY}` },
-  });
-  if (!res.ok) throw new Error(`CopperCloud receipt fetch failed: ${res.status}`);
-  return res.json();
+export async function getReceipt(
+  jobId: string,
+  failOpen = true
+): Promise<Record<string, unknown> | null> {
+  try {
+    const res = await fetch(`${ORCHESTRATOR_URL}/api/jobs/${jobId}/receipt`, {
+      headers: { Authorization: `Bearer ${READ_KEY}` },
+    });
+    if (!res.ok) throw new Error(`CopperCloud receipt fetch failed: ${res.status}`);
+    return res.json();
+  } catch (e) {
+    if (failOpen) {
+      console.warn("[coppercloud] receipt fetch failed (non-blocking):", e);
+      return null;
+    }
+    throw e;
+  }
 }
 ```
 
